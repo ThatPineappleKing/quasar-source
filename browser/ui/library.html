@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Quasar Library</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="passwords.css">
+  <link rel="stylesheet" href="library.css">
+</head>
+<body data-close="lib:close">
+  <div class="lib">
+    <nav class="lib-nav" aria-label="Library sections">
+      <h1>Library</h1>
+      <button data-sec="history" class="on" data-ic="history">History <kbd>Ctrl+H</kbd></button>
+      <button data-sec="downloads" data-ic="download">Downloads <kbd>Ctrl+J</kbd></button>
+      <button data-sec="sites" data-ic="sliders">Site settings</button>
+      <button data-sec="boosts" data-ic="sparkle">Boosts</button>
+      <button data-sec="atc" data-ic="plane">Air Traffic Control</button>
+      <button data-sec="extensions" data-ic="puzzle">Extensions</button>
+      <button data-sec="shortcuts" data-ic="keyboard">Keyboard shortcuts</button>
+      <button data-sec="backup" data-ic="cloud">Backup &amp; sync</button>
+      <button data-sec="updates" data-ic="refresh">Updates</button>
+      <div class="grow"></div>
+      <label class="lbl" for="space">Space</label>
+      <select id="space" class="field" aria-label="Space"></select>
+      <div class="default-box" id="defaultBox">
+        <p id="defaultText">Checking default browser…</p>
+        <button id="makeDefault" class="btn small" hidden>Make Quasar default…</button>
+      </div>
+    </nav>
+
+    <main class="lib-main">
+      <!-- History -->
+      <section id="sec-history" class="sec">
+        <header class="sec-head">
+          <div><h2>History</h2><p class="sub" id="histSub"></p></div>
+          <div class="tools">
+            <input id="histSearch" class="field" placeholder="Search history" aria-label="Search history">
+            <button id="histDelete" class="btn ghost" disabled>Delete selected</button>
+            <button id="histClear" class="btn ghost danger">Clear all…</button>
+          </div>
+        </header>
+        <div id="histList" class="card list-card"></div>
+      </section>
+
+      <!-- Downloads -->
+      <section id="sec-downloads" class="sec" hidden>
+        <header class="sec-head">
+          <div><h2>Downloads</h2><p class="sub">Saved to your Downloads folder. Pause, resume, cancel or retry here.</p></div>
+          <div class="tools">
+            <label class="chk"><input type="checkbox" id="dlAll"> All Spaces</label>
+            <button id="dlClear" class="btn ghost">Clear list</button>
+          </div>
+        </header>
+        <ul id="dlList" class="card list-card dl-list"></ul>
+      </section>
+
+      <!-- Site settings -->
+      <section id="sec-sites" class="sec" hidden>
+        <header class="sec-head">
+          <div><h2>Site settings</h2><p class="sub">Permissions you've given or refused, and zoom levels you've set, for this Space. Quasar remembers them after restarting.</p></div>
+          <div class="tools"><input id="siteSearch" class="field" placeholder="Search sites" aria-label="Search sites"></div>
+        </header>
+        <ul id="siteList" class="card list-card site-list"></ul>
+      </section>
+
+      <!-- Boosts -->
+      <section id="sec-boosts" class="sec" hidden>
+        <header class="sec-head">
+          <div><h2>Boosts</h2><p class="sub">Your own changes to a website: CSS to restyle or hide things, applied every time the site loads. Changes to CSS show up right away.</p></div>
+          <div class="tools"><button id="boostNew" class="btn">New Boost</button></div>
+        </header>
+        <div id="boostList"></div>
+      </section>
+
+      <!-- Air Traffic Control -->
+      <section id="sec-atc" class="sec" hidden>
+        <header class="sec-head">
+          <div><h2>Air Traffic Control</h2><p class="sub">Send links to a site straight to the Space you choose. This applies to links from other apps, links that open a new tab, and addresses typed in the command bar. Each Space has its own logins.</p></div>
+          <div class="tools"><button id="atcNew" class="btn">Add rule</button></div>
+        </header>
+        <ul id="atcList" class="card list-card atc-list"></ul>
+        <p class="sub rule-help" id="ruleHelp">Rules: <code>github.com</code> matches the site and its subdomains · <code>*.example.com</code> only subdomains · <code>example.com/docs</code> pages under that path.</p>
+      </section>
+
+      <!-- Extensions -->
+      <section id="sec-extensions" class="sec" hidden>
+        <header class="sec-head">
+          <div><h2>Extensions</h2><p class="sub">Chrome extensions run in every Space (not private windows). Their buttons appear next to the address bar.</p></div>
+          <div class="tools"><button id="extUpdate" class="btn ghost">Check for updates</button></div>
+        </header>
+        <div class="card ext-add">
+          <b>Add from the Chrome Web Store</b>
+          <p class="sub">Open the extension's page on chromewebstore.google.com, copy its address, and paste it here (or paste its ID).</p>
+          <div class="row-in"><input id="extStore" class="field" placeholder="https://chromewebstore.google.com/detail/…"><button id="extStoreBtn" class="btn">Add</button></div>
+          <p class="sub ext-more"><button id="extCrx" class="linkbtn">Install a .crx file…</button> · <button id="extFolder" class="linkbtn">Load an unpacked folder (developer)…</button> · <button id="extArc" class="linkbtn">Import from Arc…</button></p>
+          <p class="sub" id="extMsg"></p>
+          <ul id="arcExtList" class="arc-ext" hidden></ul>
+        </div>
+        <ul id="extList" class="card list-card ext-list"></ul>
+        <p class="sub rule-help">Electron supports most of what extensions need, but not everything Chrome does: some extensions (or parts of them) may not work. Quasar warns you before installing one that needs something it doesn’t have. Untick a Space under an extension to keep it out of that Space (Spaces that share a profile share their extensions).</p>
+      </section>
+
+      <!-- Updates -->
+      <section id="sec-updates" class="sec" hidden>
+        <header class="sec-head">
+          <div><h2>Updates</h2><p class="sub">The engine (Electron, which brings Chromium's security fixes) updates itself: see Settings › Updates in the sidebar. The packages below are checked once a day; installing them is up to you.</p></div>
+          <div class="tools"><button id="cmpCheck" class="btn ghost">Check now</button></div>
+        </header>
+        <div class="card bk">
+          <b>Engine</b>
+          <p class="sub" id="engText"></p>
+        </div>
+        <div class="card bk">
+          <b>Components</b>
+          <ul id="cmpList" class="cmp-list"></ul>
+          <div class="row-in"><button id="cmpUpdate" class="btn" hidden>Update now</button><button id="cmpUndo" class="btn ghost" hidden>Go back to the previous versions</button></div>
+          <p class="sub" id="cmpMsg" aria-live="polite"></p>
+          <p class="sub">Each package is checked against the npm registry's SHA-512 checksum, and Quasar test-starts itself with the new versions before keeping them. Only updates within the versions Quasar was built for are installed; a new major version is just mentioned.</p>
+        </div>
+        <div class="card bk">
+          <b>Quasar itself</b>
+          <p class="sub" id="selfText"></p>
+        </div>
+      </section>
+
+      <!-- Keyboard shortcuts -->
+      <section id="sec-shortcuts" class="sec" hidden>
+        <header class="sec-head">
+          <div><h2>Keyboard shortcuts</h2><p class="sub">Click Change, then press the keys you want (Ctrl or Alt plus a key, or an F-key). Ctrl+/ in any window shows this list.</p></div>
+          <div class="tools"><button id="keyReset" class="btn ghost">Reset all</button></div>
+        </header>
+        <p class="sub" id="keyMsg" aria-live="polite"></p>
+        <ul id="keyList" class="card list-card key-list"></ul>
+      </section>
+
+      <!-- Backup & sync -->
+      <section id="sec-backup" class="sec" hidden>
+        <header class="sec-head"><div><h2>Backup &amp; sync</h2><p class="sub">Keep a copy of your Spaces, pinned tabs, Favorites, settings and (optionally) passwords, or keep several PCs in step.</p></div></header>
+        <div class="card bk">
+          <b>Back up to a file</b>
+          <label class="chk"><input type="checkbox" id="bkHistory" checked> Include browsing history</label>
+          <label class="chk"><input type="checkbox" id="bkSecrets"> Include saved passwords and addresses (the file will be encrypted)</label>
+          <input id="bkPass" class="field" type="password" placeholder="Passphrase to encrypt the backup (optional unless passwords are included)" autocomplete="new-password">
+          <div class="row-in"><button id="bkSave" class="btn">Back up now…</button></div>
+          <p class="sub" id="bkMsg"></p>
+        </div>
+        <div class="card bk">
+          <b>Restore from a backup</b>
+          <p class="sub">Quasar backups (.archbackup) and backups from the Arc+Chrome extension (.json).</p>
+          <div class="row-in"><button id="rsPick" class="btn ghost">Choose a backup file…</button></div>
+          <div id="rsStep" hidden>
+            <input id="rsPass" class="field" type="password" placeholder="Passphrase for this backup" hidden>
+            <p class="sub" id="rsInfo"></p>
+            <label class="chk"><input type="radio" name="rsMode" value="merge" checked> Add to what's here (keeps your current Spaces)</label>
+            <label class="chk"><input type="radio" name="rsMode" value="replace"> Replace my Spaces and settings with the backup</label>
+            <div class="row-in"><button id="rsGo" class="btn">Restore</button></div>
+          </div>
+          <p class="sub" id="rsMsg"></p>
+        </div>
+        <div class="card bk">
+          <b>Automatic backups</b>
+          <label class="chk"><input type="checkbox" id="abOn"> Back up once a day to <span id="abDir"></span> (keeps the last 10)</label>
+          <p class="sub" id="abMsg"></p>
+        </div>
+        <div class="card bk">
+          <b>Sync between PCs</b>
+          <p class="sub">Choose a folder that's kept in step between your PCs by OneDrive, Dropbox, Google Drive or similar, and use the same passphrase on each PC. Quasar writes an encrypted file there and merges the other PCs' changes: Spaces, pinned tabs, Favorites, settings, Boosts, Air Traffic Control, history, passwords and addresses. Nothing is sent anywhere by Quasar itself.</p>
+          <div class="row-in"><input id="syFolder" class="field" readonly placeholder="No folder chosen"><button id="syPick" class="btn ghost">Choose folder…</button></div>
+          <input id="syPass" class="field" type="password" placeholder="Sync passphrase (at least 8 characters, the same on every PC)" autocomplete="new-password">
+          <input id="syName" class="field" placeholder="This PC's name">
+          <div class="row-in"><button id="syOn" class="btn">Turn on sync</button><button id="syNow" class="btn ghost" hidden>Sync now</button><button id="syOff" class="btn ghost danger" hidden>Turn off</button></div>
+          <p class="sub" id="syMsg"></p>
+          <ul id="syDevices" class="sy-devices"></ul>
+        </div>
+        <div class="card bk" id="rtCard" hidden>
+          <b>Tabs on your other PCs</b>
+          <p class="sub">The tabs open on your other PCs when they last synced. Click one to open it here. (They're also in the command bar: type part of the title.)</p>
+          <div id="rtList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="theme.js"></script>
+  <script src="icons.js"></script>
+  <script src="library.js"></script>
+  <script src="inapp.js"></script>
+</body>
+</html>

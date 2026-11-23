@@ -1,0 +1,61 @@
+{
+  "manifest_version": 3,
+  "name": "Arc+Chrome",
+  "version": "1.0.0",
+  "description": "Arc-style Spaces sidebar, command bar, Little Arc, Air Traffic Control, Boosts and auto-archive for Chrome.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Open Arc sidebar",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "options_page": "options.html",
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage",
+    "sidePanel",
+    "alarms",
+    "history",
+    "bookmarks",
+    "search",
+    "favicon",
+    "scripting"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+S" },
+      "description": "Open the sidebar"
+    },
+    "next-space": {
+      "suggested_key": { "default": "Alt+Shift+Right" },
+      "description": "Next Space"
+    },
+    "prev-space": {
+      "suggested_key": { "default": "Alt+Shift+Left" },
+      "description": "Previous Space"
+    },
+    "little-arc": {
+      "suggested_key": { "default": "Alt+Shift+N" },
+      "description": "Open Little Arc (small quick window)"
+    }
+  }
+}

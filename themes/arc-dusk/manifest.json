@@ -1,0 +1,104 @@
+{
+    "manifest_version":  3,
+    "name":  "Arc Dusk",
+    "version":  "1.0.0",
+    "description":  "Arc-style dark theme: indigo-to-plum gradient with grain.",
+    "theme":  {
+                  "images":  {
+                                 "theme_frame":  "images/frame.png",
+                                 "theme_frame_inactive":  "images/frame.png",
+                                 "theme_toolbar":  "images/frame.png",
+                                 "theme_tab_background":  "images/frame.png",
+                                 "theme_tab_background_inactive":  "images/frame.png",
+                                 "theme_ntp_background":  "images/ntp.png"
+                             },
+                  "colors":  {
+                                 "bookmark_text":  [
+                                                       216,
+                                                       208,
+                                                       238
+                                                   ],
+                                 "frame":  [
+                                               51,
+                                               32,
+                                               90
+                                           ],
+                                 "frame_inactive":  [
+                                                        39,
+                                                        32,
+                                                        64
+                                                    ],
+                                 "ntp_background":  [
+                                                        59,
+                                                        31,
+                                                        92
+                                                    ],
+                                 "ntp_header":  [
+                                                    51,
+                                                    32,
+                                                    90
+                                                ],
+                                 "ntp_link":  [
+                                                  199,
+                                                  181,
+                                                  255
+                                              ],
+                                 "ntp_text":  [
+                                                  237,
+                                                  232,
+                                                  247
+                                              ],
+                                 "omnibox_background":  [
+                                                            42,
+                                                            31,
+                                                            72
+                                                        ],
+                                 "omnibox_text":  [
+                                                      237,
+                                                      232,
+                                                      247
+                                                  ],
+                                 "tab_background_text":  [
+                                                             216,
+                                                             208,
+                                                             238
+                                                         ],
+                                 "tab_background_text_inactive":  [
+                                                                      167,
+                                                                      157,
+                                                                      196
+                                                                  ],
+                                 "tab_text":  [
+                                                  243,
+                                                  239,
+                                                  251
+                                              ],
+                                 "toolbar":  [
+                                                 51,
+                                                 32,
+                                                 90
+                                             ],
+                                 "toolbar_button_icon":  [
+                                                             207,
+                                                             198,
+                                                             234
+                                                         ],
+                                 "toolbar_text":  [
+                                                      237,
+                                                      232,
+                                                      247
+                                                  ]
+                             },
+                  "tints":  {
+                                "frame_inactive":  [
+                                                       -1,
+                                                       0.85,
+                                                       0.6
+                                                   ]
+                            },
+                  "properties":  {
+                                     "ntp_background_alignment":  "center",
+                                     "ntp_background_repeat":  "no-repeat"
+                                 }
+              }
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Quasar Task Manager</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #f6f4fb; --fg: #1d1730; --line: #e2dcef; --sel: #e9e2fb; --mut: #6d6680; --acc: #5b3fb8; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #1b1824; --fg: #ece8f6; --line: #322c40; --sel: #2f2742; --mut: #9d96b0; --acc: #b8a4ff; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 13px/1.35 "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--fg); display: flex; flex-direction: column; height: 100vh; }
+    header { display: flex; align-items: center; gap: 12px; padding: 12px 16px 8px; flex-wrap: wrap; }
+    h1 { font-size: 16px; margin: 0; flex: 1; }
+    .sum { color: var(--mut); }
+    .wrap { flex: 1; overflow: auto; padding: 0 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { position: sticky; top: 0; background: var(--bg); text-align: left; font-weight: 600; color: var(--mut); padding: 6px 8px; border-bottom: 1px solid var(--line); cursor: pointer; user-select: none; }
+    th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+    tr.sel td { background: var(--sel); }
+    tr:focus { outline: 2px solid var(--acc); outline-offset: -2px; }
+    td small { display: block; color: var(--mut); }
+    .kind { color: var(--mut); width: 80px; }
+    footer { display: flex; gap: 8px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+    .grow { flex: 1; }
+    button, select { font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 7px; padding: 6px 12px; }
+    button:hover:not(:disabled) { background: var(--sel); }
+    button.danger { color: #c4302b; border-color: #e7b2b0; }
+    button:disabled { opacity: .45; }
+    label { color: var(--mut); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Task manager</h1>
+    <span class="sum" id="sum"></span>
+  </header>
+  <div class="wrap">
+    <table aria-label="Quasar processes">
+      <thead><tr><th data-k="title">Task</th><th class="kind" data-k="kind">Type</th><th class="num" data-k="mem">Memory</th><th class="num" data-k="cpu">CPU</th><th class="num" data-k="pid">Process ID</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <footer>
+    <label for="limit">Memory limit</label>
+    <select id="limit">
+      <option value="0">No limit</option><option value="1024">1 GB</option><option value="2048">2 GB</option><option value="3072">3 GB</option>
+      <option value="4096">4 GB</option><option value="6144">6 GB</option><option value="8192">8 GB</option>
+    </select>
+    <span class="grow sum" id="limitHint"></span>
+    <button id="show" disabled>Go to tab</button>
+    <button id="sleep" disabled>Put to sleep</button>
+    <button id="end" class="danger" disabled>End process</button>
+  </footer>
+  <script src="taskmgr.js"></script>
+</body>
+</html>

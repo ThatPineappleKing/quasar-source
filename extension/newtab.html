@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Tab</title>
+  <link rel="stylesheet" href="shared/base.css">
+  <link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+  <div class="grain"></div>
+  <main class="stage">
+    <div class="bar" role="combobox" aria-expanded="true" aria-owns="results">
+      <div class="field">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="q" autofocus spellcheck="false" autocomplete="off" placeholder="Search or Enter URL…" aria-label="Search or enter URL">
+        <kbd id="spaceTag"></kbd>
+      </div>
+      <ul id="results" role="listbox"></ul>
+    </div>
+  </main>
+  <script type="module" src="newtab.js"></script>
+</body>
+</html>

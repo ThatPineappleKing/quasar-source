@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Warning</title>
+  <style>
+    :root { --bg: #ffffff; --fg: #202124; --muted: #5f6368; --red: #c5221f; --amber: #b06000; --accent: #6b4fd8; --line: #dadce0; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #202124; --fg: #e8eaed; --muted: #9aa0a6; --red: #f28b82; --amber: #fdd663; --accent: #a28fff; --line: #3c4043; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 "Segoe UI", system-ui, sans-serif; }
+    body.danger { --bg: #b3261e; --fg: #fff; --muted: #fde7e5; --line: rgba(255,255,255,.4); --accent: #fff; }
+    main { max-width: 600px; margin: 14vh auto 40px; padding: 0 24px; }
+    .icon { width: 56px; height: 56px; color: var(--amber); }
+    body.danger .icon { color: #fff; }
+    h1 { font-size: 26px; font-weight: 600; margin: 16px 0 12px; }
+    p { margin: 0 0 12px; color: var(--muted); }
+    b { color: var(--fg); font-weight: 600; word-break: break-all; }
+    .row { display: flex; justify-content: space-between; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
+    button { font: inherit; font-size: 14px; font-weight: 600; height: 38px; padding: 0 20px; border-radius: 8px; cursor: pointer; }
+    .primary { background: var(--accent); color: #fff; border: 0; }
+    body.danger .primary { color: #b3261e; }
+    .link { background: none; border: 1px solid var(--line); color: var(--fg); }
+    #more { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+    #proceed { background: none; border: 0; padding: 0; height: auto; color: var(--fg); text-decoration: underline; font-weight: 400; }
+  </style>
+</head>
+<body>
+  <main>
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M12 8v5M12 16h.01"/>
+    </svg>
+    <h1 id="title"></h1>
+    <p id="msg"></p>
+    <p id="extra"></p>
+    <div class="row">
+      <button class="link" id="details" aria-expanded="false">Details</button>
+      <button class="primary" id="back" autofocus>Back to safety</button>
+    </div>
+    <section id="more" hidden>
+      <p id="why"></p>
+      <p><button id="proceed"></button></p>
+    </section>
+  </main>
+  <script src="blocked.js"></script>
+</body>
+</html>

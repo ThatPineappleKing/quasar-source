@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Mark up screenshot</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: #2a2633; color: #eee; font: 13px "Segoe UI", system-ui, sans-serif; }
+    .bar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #1f1c27; flex-wrap: wrap; }
+    .bar button { font: inherit; color: inherit; background: transparent; border: 1px solid #45405a; border-radius: 7px; padding: 6px 10px; cursor: default; }
+    .bar button:hover { background: #38324a; }
+    .bar button.on { background: #6b4fd8; border-color: #6b4fd8; }
+    .bar .primary { background: #6b4fd8; border-color: #6b4fd8; }
+    .sw { width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent; padding: 0 !important; }
+    .sw.on { border-color: #fff; }
+    .sep { width: 1px; height: 22px; background: #45405a; margin: 0 4px; }
+    .grow { flex: 1; }
+    .stage { flex: 1; overflow: auto; display: grid; place-items: center; padding: 16px; }
+    canvas { box-shadow: 0 8px 30px rgba(0,0,0,.4); cursor: crosshair; max-width: none; }
+    .msg { color: #b9b2cc; }
+  </style>
+</head>
+<body>
+  <div class="bar" role="toolbar" aria-label="Mark-up tools">
+    <button data-tool="pen" class="on" title="Pen (P)">✎ Pen</button>
+    <button data-tool="hi" title="Highlighter (H)">▮ Highlight</button>
+    <button data-tool="box" title="Rectangle (R)">▭ Box</button>
+    <button data-tool="arrow" title="Arrow (A)">↗ Arrow</button>
+    <button data-tool="blur" title="Blur a rectangle, e.g. personal details (B)">▦ Blur</button>
+    <span class="sep"></span>
+    <button class="sw on" data-color="#e5322d" title="Red" style="background:#e5322d"></button>
+    <button class="sw" data-color="#f2c200" title="Yellow" style="background:#f2c200"></button>
+    <button class="sw" data-color="#2f9e44" title="Green" style="background:#2f9e44"></button>
+    <button class="sw" data-color="#1c7ed6" title="Blue" style="background:#1c7ed6"></button>
+    <button class="sw" data-color="#111111" title="Black" style="background:#111"></button>
+    <span class="sep"></span>
+    <button id="undo" title="Undo (Ctrl+Z)">↶ Undo</button>
+    <span class="grow msg" id="msg"></span>
+    <button id="copy" title="Copy to the clipboard (Ctrl+C)">Copy</button>
+    <button id="saveAs">Save as…</button>
+    <button id="save" class="primary" title="Save over the screenshot (Ctrl+S)">Save</button>
+  </div>
+  <div class="stage"><canvas id="c" aria-label="Screenshot"></canvas></div>
+  <script src="markup.js"></script>
+</body>
+</html>

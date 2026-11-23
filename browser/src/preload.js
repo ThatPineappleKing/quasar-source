@@ -1,0 +1,19 @@
+// Bridge between Quasar's own UI pages and the main process. Web pages never
+// get this preload; they run sandboxed with no access to it.
+const { contextBridge, ipcRenderer } = require('electron');
+
+// The main window shows extension toolbar buttons (only there; other Quasar pages
+// are sandboxed and can't load this module).
+if (/\/ui\/index\.html$/.test(location.pathname)) {
+  try { require('electron-chrome-extensions/browser-action').injectBrowserAction(); } catch { /* extensions unavailable */ }
+}
+
+contextBridge.exposeInMainWorld('arch', {
+  act: (name, ...args) => ipcRenderer.invoke('act', name, args),
+  on: (channel, cb) => {
+    const allowed = ['state', 'toast', 'command:open', 'find:result', 'little:state', 'little:focus-url', 'ui:space', 'ui:folder', 'lib:update', 'lib:show', 'layer:show', 'layer:hide', 'layer:peek', 'chooser:list', 'ui:view',
+      'ui:speak', 'ui:group', 'ui:f6', 'ui:focus', 'markup:init', 'tm:update'];
+    if (!allowed.includes(channel)) return;
+    ipcRenderer.on(channel, (e, data) => cb(data));
+  },
+});

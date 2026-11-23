@@ -1,0 +1,44 @@
+{
+  "name": "quasar-browser",
+  "productName": "Quasar",
+  "version": "1.5.3",
+  "private": true,
+  "author": "Quasar",
+  "description": "An Arc-style browser: Spaces sidebar, command bar, profiles, Little Quasar window.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "build": {
+    "appId": "Quasar.Browser",
+    "productName": "Quasar",
+    "asar": false,
+    "directories": { "output": "../dist/installer" },
+    "files": ["src/**", "ui/**", "package.json", "README.md"],
+    "extraResources": [{ "from": "../icon/quasar.ico", "to": "icon/quasar.ico" }],
+    "win": { "target": "nsis", "icon": "../icon/quasar.ico" },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "Quasar-Setup-${version}.exe",
+      "shortcutName": "Quasar",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": { "provider": "github", "owner": "YOUR-GITHUB-NAME", "repo": "quasar" }
+  },
+  "devDependencies": {
+    "electron": "^45.3.1",
+    "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "@browsermt/bergamot-translator": "^0.4.9",
+    "@duckduckgo/autoconsent": "^18.4.0",
+    "@mozilla/readability": "^0.6.0",
+    "electron-chrome-extensions": "^4.10.0",
+    "electron-updater": "^6.8.11",
+    "qrcode-generator": "^2.0.4"
+  }
+}

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src * data: blob:; media-src *; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Reader</title>
+  <link rel="stylesheet" href="reader.css">
+</head>
+<body class="t-light f-serif">
+  <header class="bar" id="bar">
+    <button id="exit" title="Leave reader mode (F9)">← Original page</button>
+    <span class="grow"></span>
+    <button id="smaller" title="Smaller text">A−</button>
+    <button id="bigger" title="Larger text">A+</button>
+    <button id="font" title="Serif or sans-serif">Aa</button>
+    <span class="themes" role="group" aria-label="Colours">
+      <button data-theme="light" class="sw light" title="Light"></button>
+      <button data-theme="sepia" class="sw sepia" title="Sepia"></button>
+      <button data-theme="dark" class="sw dark" title="Dark"></button>
+    </span>
+    <button id="width" title="Wider / narrower">⇔</button>
+    <button id="listen" title="Read aloud">Listen</button>
+    <button id="translate" title="Translate the original page">文 Translate</button>
+  </header>
+  <main id="page">
+    <p class="site" id="site"></p>
+    <h1 id="title">Loading…</h1>
+    <p class="meta" id="meta"></p>
+    <article id="article"></article>
+    <p class="foot"><a id="orig">Open the original page</a></p>
+  </main>
+  <script src="reader.js"></script>
+</body>
+</html>

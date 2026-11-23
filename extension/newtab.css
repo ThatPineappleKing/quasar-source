@@ -1,0 +1,43 @@
+.stage {
+  position: relative; z-index: 1;
+  min-height: 100vh; display: flex; justify-content: center; align-items: flex-start;
+  padding: 18vh 16px 16px;
+}
+.little .stage { padding-top: 16px; }
+.bar {
+  width: min(640px, 100%);
+  background: rgba(255,255,255,.86);
+  color: #1D1730;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(30,15,60,.28), 0 2px 6px rgba(30,15,60,.12);
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+[data-dark="1"] .bar { background: rgba(28,24,40,.88); color: #F1ECFA; }
+.field { display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 56px; }
+.field svg { width: 18px; height: 18px; opacity: .55; flex: none; }
+#q {
+  flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: none;
+  font-size: 18px; color: inherit;
+}
+#q::placeholder { color: currentColor; opacity: .45; }
+kbd {
+  font: 600 11px/1 "Segoe UI", system-ui; padding: 5px 8px; border-radius: 6px;
+  background: rgba(127,127,127,.14); opacity: .8; white-space: nowrap;
+}
+kbd:empty { display: none; }
+#results { list-style: none; margin: 0; padding: 0 8px 8px; max-height: 60vh; overflow-y: auto; }
+#results:empty { display: none; }
+#results .sec {
+  font-size: 11px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase;
+  opacity: .5; padding: 10px 10px 4px;
+}
+#results li.item {
+  display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 10px; border-radius: 10px; cursor: pointer;
+}
+#results li.item.sel { background: var(--accent); color: #fff; }
+[data-dark="0"] #results li.item.sel { color: #1D1730; background: color-mix(in srgb, var(--accent) 55%, white); }
+#results img, #results .glyph { width: 18px; height: 18px; flex: none; border-radius: 4px; display: grid; place-items: center; font-size: 14px; }
+#results .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#results .s { opacity: .55; font-size: 12px; margin-left: 6px; }
+#results .badge { font-size: 11px; opacity: .6; flex: none; }

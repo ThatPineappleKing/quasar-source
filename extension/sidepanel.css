@@ -1,0 +1,108 @@
+#app {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; height: 100vh;
+  padding: 8px 8px 6px;
+}
+
+/* ---- top: nav + URL pill ---- */
+.nav { display: flex; align-items: center; gap: 2px; }
+.spacer { flex: 1; }
+.url { margin: 6px 0 10px; }
+.url input {
+  width: 100%; height: 34px; border-radius: var(--radius);
+  border: 0; outline: none; padding: 0 12px;
+  background: var(--hover); color: var(--fg);
+  font-size: 13px; text-overflow: ellipsis;
+}
+.url input:focus { background: var(--card); box-shadow: var(--card-shadow); }
+
+/* ---- favorites ---- */
+.favorites {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  margin-bottom: 10px;
+}
+.favorites:empty { display: none; }
+.fav {
+  position: relative; height: 44px; border-radius: var(--radius);
+  background: var(--hover); display: grid; place-items: center;
+}
+.fav:hover { background: var(--card); }
+.fav.open { background: var(--card); box-shadow: var(--card-shadow); }
+.fav img { width: 20px; height: 20px; }
+.fav .x {
+  position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%;
+  display: none; place-items: center; font-size: 11px; background: var(--card); color: var(--fg-muted);
+}
+.fav:hover .x { display: grid; }
+
+/* ---- scrolling body ---- */
+.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; margin: 0 -4px; padding: 0 4px; scrollbar-width: thin; }
+.space-head { display: flex; align-items: center; gap: 4px; margin: 2px 0 6px; }
+.space-title {
+  flex: 1; text-align: left; font-weight: 650; font-size: 13.5px;
+  padding: 4px 6px; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+button.space-title:hover { background: var(--hover); }
+.hint { color: var(--fg-muted); margin: 0 6px 10px; font-size: 12px; }
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.row {
+  position: relative; display: flex; align-items: center; gap: 9px;
+  width: 100%; height: 34px; padding: 0 8px; border-radius: var(--radius);
+  text-align: left; user-select: none;
+}
+.row:hover { background: var(--hover); }
+.row.active { background: var(--card); box-shadow: var(--card-shadow); }
+.row img { width: 16px; height: 16px; flex: none; border-radius: 3px; }
+.row .title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .tools { display: none; gap: 0; margin-right: -4px; }
+.row:hover .tools { display: flex; }
+.row .tools button { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; color: var(--fg-muted); }
+.row .tools button:hover { background: var(--hover); color: var(--fg); }
+.row .tools svg { width: 13px; height: 13px; }
+.row .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--fg-muted); flex: none; }
+.row.dragging { opacity: .4; }
+.row.drop-before { box-shadow: inset 0 2px 0 var(--fg); }
+
+.pinned:empty::before {
+  content: "Drag tabs here to pin them to this Space";
+  display: block; padding: 8px; color: var(--fg-muted); font-size: 12px;
+  border: 1px dashed var(--line); border-radius: var(--radius);
+}
+.pinned.drop { background: var(--hover); border-radius: var(--radius); }
+
+.divider { display: flex; align-items: center; margin: 8px 6px; }
+.divider span { flex: 1; height: 1px; background: var(--line); }
+
+.new-tab { color: var(--fg-muted); }
+.new-tab .plus { width: 16px; text-align: center; font-size: 17px; line-height: 1; }
+
+.tidy {
+  display: block; margin: 8px auto 12px; padding: 4px 10px; border-radius: 8px;
+  color: var(--fg-muted); font-size: 12px;
+}
+.tidy:hover { background: var(--hover); color: var(--fg); }
+
+/* ---- archive ---- */
+.row .when { color: var(--fg-muted); font-size: 11px; flex: none; }
+
+/* ---- footer: Space switcher ---- */
+.bottom { display: flex; align-items: center; gap: 2px; padding-top: 6px; }
+.spaces { flex: 1; display: flex; justify-content: center; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.space-dot {
+  width: 28px; height: 28px; border-radius: 8px; flex: none;
+  display: grid; place-items: center; font-size: 14px; color: var(--fg-muted);
+}
+.space-dot:hover { background: var(--hover); }
+.space-dot.on { background: var(--card); box-shadow: var(--card-shadow); color: var(--fg); }
+.space-dot.drop { outline: 2px solid var(--fg); }
+.space-dot .ring { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1.5px currentColor; }
+.space-dot.on .ring { background: currentColor; }
+
+#editorHost { padding: 2px; }
+
+/* swipe animation */
+#view-main.swipe-left { animation: swl .22s ease; }
+#view-main.swipe-right { animation: swr .22s ease; }
+@keyframes swl { from { transform: translateX(24px); opacity: .3; } }
+@keyframes swr { from { transform: translateX(-24px); opacity: .3; } }

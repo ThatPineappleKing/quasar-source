@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src * data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Little Quasar</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .lbar { position: fixed; top: 0; left: 0; right: 0; height: 40px; display: flex; align-items: center; gap: 4px; padding: 0 4px 0 6px; }
+    .lbar form { flex: 1; min-width: 0; }
+    .lbar input { width: 100%; height: 28px; border: 0; outline: none; border-radius: 8px; background: var(--pill); padding: 0 10px; font-size: 12.5px; }
+    .lbar input:focus { background: var(--card); }
+    .open-main { height: 28px; padding: 0 10px; border-radius: 8px; background: var(--pill); font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .open-main:hover { background: var(--card); }
+  </style>
+</head>
+<body>
+  <div class="lbar drag">
+    <button class="ib nodrag" id="back" title="Back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <form id="form" class="nodrag"><input id="url" spellcheck="false" placeholder="Search or Enter URL…" aria-label="Address"></form>
+    <button class="open-main nodrag" id="openMain" title="Move this page into the main window">Open in Quasar</button>
+    <button class="ib nodrag" id="close" title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <script src="theme.js"></script>
+  <script src="little.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arc+Chrome Settings</title>
+  <link rel="stylesheet" href="shared/base.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="grain"></div>
+  <main class="page">
+    <header>
+      <h1>Arc+Chrome</h1>
+      <p class="lede">Settings save automatically.</p>
+    </header>
+
+    <section class="card" id="welcome">
+      <h2>Getting started</h2>
+      <ol>
+        <li>Pin the extension (puzzle icon › pin), then click it or press <kbd>Alt</kbd>+<kbd>S</kbd> to open the sidebar.</li>
+        <li>Put the sidebar on the left like Arc: Chrome Settings › Appearance › <em>Side panel position</em> › Left.</li>
+        <li>Load a theme from the project's <code>themes</code> folder (Dawn or Dusk) so the window frame matches.</li>
+        <li>Shortcuts: <kbd>Ctrl</kbd>+<kbd>T</kbd> Command Bar · <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>←/→</kbd> switch Space · <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd> Little Arc. Change them at <code>chrome://extensions/shortcuts</code>.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>Spaces</h2>
+      <p class="hint">Each Space gets its own colours, pinned tabs and tab group. Swipe sideways in the sidebar to switch.</p>
+      <div id="spaces" class="spaces"></div>
+      <button id="addSpace" class="btn">+ New Space</button>
+    </section>
+
+    <section class="card">
+      <h2>Archive</h2>
+      <p class="hint">Tabs you haven't looked at are closed and kept in the sidebar's Archive. Pinned tabs and Favorites are never archived.</p>
+      <label class="inline">Archive tabs after
+        <select id="archiveAfter">
+          <option value="0">Never</option>
+          <option value="1">1 hour</option>
+          <option value="6">6 hours</option>
+          <option value="12">12 hours</option>
+          <option value="24">24 hours</option>
+          <option value="168">7 days</option>
+          <option value="720">30 days</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>Air Traffic Control</h2>
+      <p class="hint">Send links from a site to a chosen Space automatically. Use a domain (<code>github.com</code>) or a path (<code>docs.google.com/spreadsheets</code>).</p>
+      <div id="atc" class="rules"></div>
+      <button id="addAtc" class="btn">+ Add route</button>
+    </section>
+
+    <section class="card">
+      <h2>Boosts</h2>
+      <p class="hint">Restyle any site with your own CSS, applied every time it loads.</p>
+      <div id="boosts" class="rules"></div>
+      <button id="addBoost" class="btn">+ New Boost</button>
+    </section>
+
+    <section class="card">
+      <h2>Backup</h2>
+      <p class="hint">Export your Spaces, pinned tabs, Favorites and settings to a file, or restore them.</p>
+      <div class="row-btns">
+        <button id="export" class="btn">Export</button>
+        <label class="btn">Import<input id="import" type="file" accept="application/json" hidden></label>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

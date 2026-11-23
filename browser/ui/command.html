@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src * data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Command Bar</title>
+  <link rel="stylesheet" href="command.css">
+</head>
+<body>
+  <div id="scrim"></div>
+  <div id="bar" class="bar" role="combobox" aria-expanded="true">
+    <div class="field">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="q" spellcheck="false" autocomplete="off" placeholder="Search or Enter URL…" aria-label="Search or enter URL">
+      <span id="tag" class="tag"></span>
+    </div>
+    <ul id="results" role="listbox"></ul>
+  </div>
+  <div id="find" class="find" hidden>
+    <input id="fq" spellcheck="false" placeholder="Find in page" aria-label="Find in page">
+    <span id="fcount" class="fcount"></span>
+    <button id="fprev" title="Previous (Shift+Enter)"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+    <button id="fnext" title="Next (Enter)"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button id="fclose" title="Close (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <!-- Keyboard shortcut cheat sheet (Ctrl+/) and the welcome tour -->
+  <div id="sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head"><b id="sheetTitle"></b><button id="sheetClose" title="Close (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div id="sheetBody" class="sheet-body"></div>
+    <div id="sheetFoot" class="sheet-foot"></div>
+  </div>
+  <script src="theme.js"></script>
+  <script src="icons.js"></script>
+  <script src="command.js"></script>
+</body>
+</html>

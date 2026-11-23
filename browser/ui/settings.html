@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: file:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Quasar Settings</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body data-close="set:close">
+  <div class="set">
+    <nav class="set-nav" aria-label="Settings sections">
+      <h1>Settings</h1>
+      <input id="setSearch" class="field" placeholder="Search settings" aria-label="Search settings" spellcheck="false">
+      <div id="setLinks" class="set-links"></div>
+    </nav>
+
+    <main class="set-main" id="setMain">
+      <section class="sec" id="sec-general" data-title="General" data-icon="settings">
+        <h2>General</h2>
+        <div class="form">
+          <label class="lbl" for="sEngine">Search engine</label>
+          <select id="sEngine" class="field"></select>
+          <label class="check"><input type="checkbox" id="sSuggest"> Show search suggestions as you type (sends what you type in the command bar to your search engine; never in private windows)</label>
+          <label class="lbl">Pages</label>
+          <label class="check"><input type="checkbox" id="sDarkAll"> Make every site dark (right-click a page › Dark Mode for This Site turns one back to normal)</label>
+          <label class="check"><input type="checkbox" id="sAutoScroll"> Middle-click auto-scroll (click the mouse wheel, then move the mouse to scroll; applies to pages opened from now on)</label>
+          <label class="lbl" for="sArchive">Archive tabs after</label>
+          <select id="sArchive" class="field">
+            <option value="0">Never</option><option value="1">1 hour</option><option value="6">6 hours</option>
+            <option value="12">12 hours</option><option value="24">24 hours</option><option value="168">7 days</option><option value="720">30 days</option>
+          </select>
+          <label class="lbl">Tabs</label>
+          <label class="check"><input type="checkbox" id="sKeepTabs"> Continue where you left off (open tabs stay when Quasar closes, until they're archived)</label>
+          <label class="lbl" for="sCycle">Ctrl+Tab goes to</label>
+          <select id="sCycle" class="field">
+            <option value="mru">The tab you used last (hold Ctrl to go further back)</option>
+            <option value="order">The next tab in the sidebar</option>
+          </select>
+          <label class="check"><input type="checkbox" id="sPreviews"> Show a preview when hovering over a tab</label>
+          <label class="check"><input type="checkbox" id="sCompact"> Compact mode: hide the sidebar and top bar until the mouse reaches the edge (Ctrl+Shift+L)</label>
+          <label class="check"><input type="checkbox" id="sGestures"> Mouse gestures (hold the right button and draw: ← back, → forward, ↓ new tab, ↓→ close, ↑↓ reload)</label>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-appearance" data-title="Appearance" data-icon="sparkle">
+        <h2>Appearance</h2>
+        <div class="form">
+          <p class="hint">Changes show straight away in the sidebar, top bar and start page, so you can watch them as you go.</p>
+          <label class="lbl">Style presets</label>
+          <div class="chip-row" id="aStyles" role="radiogroup" aria-label="Style presets"></div>
+          <label class="lbl">Colours for this Space</label>
+          <div class="swatch-row" id="aColors" role="radiogroup" aria-label="Colour presets for this Space"></div>
+          <p class="hint">Each Space keeps its own colours or gradient (up to 3 colours). For any colour: the pencil next to the Space name › Edit theme color.</p>
+          <label class="lbl" for="aAccent">Accent colour</label>
+          <div class="btn-row row-h"><input type="color" id="aAccent" class="color-in" aria-label="Accent colour"><button id="aAccentAuto" class="import-btn">Match the Space</button><span class="hint inline" id="aAccentNow"></span></div>
+          <label class="lbl" for="aFont">Font</label>
+          <div class="btn-row row-h"><select id="aFont" class="field"></select><input id="aFontOther" class="field" placeholder="Font name, e.g. Inter" spellcheck="false" hidden></div>
+          <label class="lbl" for="aSize">Text size <span class="val" id="aSizeVal"></span></label>
+          <input type="range" id="aSize" min="11" max="16" step="0.5">
+          <label class="lbl" for="aRadius">Corner roundness <span class="val" id="aRadiusVal"></span></label>
+          <input type="range" id="aRadius" min="0" max="20" step="1">
+          <label class="lbl" for="aBlur">Blur behind panels <span class="val" id="aBlurVal"></span></label>
+          <input type="range" id="aBlur" min="0" max="40" step="1">
+          <label class="lbl" for="aTrans">Window transparency <span class="val" id="aTransVal"></span></label>
+          <input type="range" id="aTrans" min="0" max="0.85" step="0.01">
+          <p class="hint">Transparency lets your desktop show through the sidebar and top bar, blurred (Windows 11). Web pages always stay solid.</p>
+          <label class="lbl">Share your setup</label>
+          <div class="btn-row row-h"><button id="aExport" class="import-btn" data-ic="upload">Export theme…</button><button id="aImport" class="import-btn" data-ic="download">Import theme…</button></div>
+          <p class="hint">A theme file holds these appearance, top bar, sidebar and start page settings plus this Space’s colours. Importing one asks before changing your Space’s colours, and can be undone.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-topbar" data-title="Top bar" data-icon="monitor">
+        <h2>Top bar</h2>
+        <div class="form">
+          <label class="lbl">Buttons</label>
+          <p class="hint">Drag buttons between the boxes to show, hide or reorder them (or focus one and use the arrow keys). Right-click the top bar for quick options.</p>
+          <div class="tb-editor" id="tbEditor">
+            <div class="tb-zone" data-zone="left"><div class="tb-zone-h">Left of the address bar</div><div class="tb-chips" aria-label="Left of the address bar"></div></div>
+            <div class="tb-zone" data-zone="right"><div class="tb-zone-h">Right of the address bar</div><div class="tb-chips" aria-label="Right of the address bar"></div></div>
+            <div class="tb-zone" data-zone="hidden"><div class="tb-zone-h">Hidden</div><div class="tb-chips" aria-label="Hidden buttons"></div></div>
+          </div>
+          <button id="tbReset" class="import-btn" data-ic="reset">Reset buttons</button>
+          <label class="lbl" for="tbHeight">Height</label>
+          <select id="tbHeight" class="field"><option value="compact">Compact</option><option value="normal">Normal</option><option value="tall">Tall</option></select>
+          <label class="lbl" for="tbUrl">Address bar shows</label>
+          <select id="tbUrl" class="field"><option value="domain">The site’s domain (example.com)</option><option value="full">The full address</option><option value="title">The page title</option></select>
+          <label class="check"><input type="checkbox" id="tbAuto"> Hide the top bar until I point at the top edge of the window</label>
+          <label class="lbl">Colour</label>
+          <div class="btn-row row-h"><label class="check"><input type="checkbox" id="tbTint"> Give the top bar its own colour</label><input type="color" id="tbColor" class="color-in" aria-label="Top bar colour"></div>
+          <label class="lbl" for="tbOp">Colour strength (lower is more see-through) <span class="val" id="tbOpVal"></span></label>
+          <input type="range" id="tbOp" min="0" max="1" step="0.01">
+          <label class="lbl" for="tbHome">Home button opens</label>
+          <input id="tbHome" class="field" placeholder="The start page (or type an address, e.g. example.com)" spellcheck="false">
+          <p class="hint err-msg" id="tbHomeMsg" hidden></p>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-sidebar" data-title="Sidebar" data-icon="panel">
+        <h2>Sidebar</h2>
+        <div class="form">
+          <label class="lbl" for="sSide">Position</label>
+          <select id="sSide" class="field">
+            <option value="left">On the left</option><option value="right">On the right</option><option value="top">On the top (tabs in a strip)</option>
+          </select>
+          <label class="lbl" for="sbWidth">Width <span class="val" id="sbWidthVal"></span></label>
+          <input type="range" id="sbWidth" min="180" max="420" step="2">
+          <label class="check"><input type="checkbox" id="sbCollapsed"> Icons only (a narrow sidebar that widens while you edit a Space, notes or a picker)</label>
+          <label class="check"><input type="checkbox" id="sbAuto"> Hide the sidebar until I point at the edge of the window</label>
+          <label class="lbl">Sections</label>
+          <div class="check-grid" id="sbSecs">
+            <label class="check"><input type="checkbox" data-sec="favorites"> Favorites</label>
+            <label class="check"><input type="checkbox" data-sec="pinned"> Pinned tabs</label>
+            <label class="check"><input type="checkbox" data-sec="folders"> Folders (off: their tabs show without the folder)</label>
+            <label class="check"><input type="checkbox" data-sec="downloads"> Recent downloads</label>
+            <label class="check"><input type="checkbox" data-sec="history"> Recent history</label>
+          </div>
+          <label class="lbl" for="sbTabStyle">Tabs show</label>
+          <select id="sbTabStyle" class="field"><option value="both">Icon and title</option><option value="icon">Icon only</option><option value="title">Title only</option></select>
+          <label class="lbl" for="sbDensity">Row spacing</label>
+          <select id="sbDensity" class="field"><option value="compact">Compact</option><option value="normal">Normal</option><option value="comfortable">Comfortable</option></select>
+          <label class="lbl" for="sbNewAt">New tabs open</label>
+          <select id="sbNewAt" class="field"><option value="bottom">At the bottom of the list</option><option value="top">At the top of the list</option></select>
+          <p class="hint">Colours and gradients are set per Space (pencil next to the Space name). Spaces have an emoji; right-click a folder › Change Icon… to give it one too.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-newtab" data-title="New tab and start page" data-icon="grid">
+        <h2>New tab and start page</h2>
+        <div class="form">
+          <div class="nt-prev" id="ntPrev" aria-hidden="true">
+            <div class="ntp-bg" id="ntpBg"></div>
+            <div class="ntp-slot ntp-top" id="ntpTop"></div>
+            <div class="ntp-mid"><div class="ntp-time" id="ntpTime"></div><div class="ntp-sub" id="ntpSub"></div><div class="ntp-slot" id="ntpCenter"></div>
+              <div class="ntp-tiles" id="ntpTiles"></div><div class="ntp-cards" id="ntpCards"></div></div>
+            <div class="ntp-slot ntp-bottom" id="ntpBottom"></div>
+            <div class="ntp-cap">Preview</div>
+          </div>
+          <label class="lbl" for="ntAction">Ctrl+T and New Tab open</label>
+          <select id="ntAction" class="field">
+            <option value="command">The command bar (search your tabs, history and the web)</option>
+            <option value="start">The start page</option>
+            <option value="url">A page of my choice</option>
+          </select>
+          <input id="ntUrl" class="field" placeholder="Address to open, e.g. example.com" spellcheck="false" hidden>
+          <p class="hint err-msg" id="ntUrlMsg" hidden></p>
+          <label class="lbl">Layout</label>
+          <div class="chip-row" id="ntLayouts" role="radiogroup" aria-label="Start page layout"></div>
+          <label class="lbl">Show on the start page</label>
+          <div class="check-grid" id="ntWidgetBox">
+            <label class="check"><input type="checkbox" data-w="clock"> Clock</label>
+            <label class="check"><input type="checkbox" data-w="date"> Date</label>
+            <label class="check"><input type="checkbox" data-w="greeting"> Greeting</label>
+            <label class="check"><input type="checkbox" data-w="links"> Shortcuts</label>
+            <label class="check"><input type="checkbox" data-w="weather"> Weather</label>
+            <label class="check"><input type="checkbox" data-w="todo"> To-do list</label>
+            <label class="check"><input type="checkbox" data-w="notes"> Notes</label>
+            <label class="check"><input type="checkbox" data-w="closed"> Recently closed tabs</label>
+          </div>
+          <label class="lbl" for="ntGreet">Greeting</label>
+          <select id="ntGreet" class="field">
+            <option value="time">Good morning / afternoon / evening</option><option value="name">With my name</option><option value="custom">My own message</option><option value="off">No greeting</option>
+          </select>
+          <input id="ntName" class="field" placeholder="Your name" maxlength="40" hidden>
+          <input id="ntMessage" class="field" placeholder="Your message" maxlength="120" hidden>
+          <label class="lbl">Clock</label>
+          <label class="check"><input type="checkbox" id="sClock24"> 24-hour time</label>
+          <label class="check"><input type="checkbox" id="sClockSec"> Show seconds</label>
+          <div class="bg-grid clock-grid" id="sClockGrid" role="radiogroup" aria-label="Clock style"></div>
+          <label class="lbl" for="ntSearchPos">Search box</label>
+          <div class="btn-row row-h"><select id="ntSearchPos" class="field" aria-label="Search box position">
+            <option value="center">In the middle</option><option value="top">At the top</option><option value="bottom">At the bottom</option><option value="hidden">Hidden</option></select>
+            <select id="ntEngine" class="field" aria-label="Search engine for the start page"></select></div>
+          <label class="lbl">Shortcuts</label>
+          <ul id="ntLinkList" class="nt-linklist" aria-label="Shortcuts"></ul>
+          <div class="btn-row row-h kw-add"><input id="ntLinkUrl" class="field" placeholder="Address" aria-label="Shortcut address"><input id="ntLinkName" class="field" placeholder="Name (optional)" aria-label="Shortcut name"><input id="ntLinkIcon" class="field" placeholder="Emoji or image link" aria-label="Shortcut icon"><button id="ntLinkAdd" class="import-btn">Add</button></div>
+          <p class="hint" id="ntLinkMsg">Drag to reorder, here or on the start page. With no icon, the site’s own icon is used.</p>
+          <div class="btn-row row-h"><span class="inline-lbl">Columns</span><select id="ntCols" class="field narrow" aria-label="Shortcut columns"><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+            <span class="inline-lbl">Size</span><select id="ntTile" class="field narrow" aria-label="Shortcut size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></div>
+          <label class="lbl" for="ntPlaceIn">Weather</label>
+          <div class="btn-row row-h"><input id="ntPlaceIn" class="field" placeholder="Your city" aria-label="City for weather"><select id="ntUnit" class="field narrow" aria-label="Temperature unit"><option value="c">°C</option><option value="f">°F</option></select><button id="ntPlaceSet" class="import-btn">Set</button></div>
+          <p class="hint" id="ntPlaceMsg">From Open-Meteo (free, no account). Only the place you type is sent, to find it, then its coordinates for the forecast.</p>
+          <label class="lbl">Background</label>
+          <div class="bg-grid" id="sBgGrid" role="radiogroup" aria-label="Start page background"></div>
+          <div class="btn-row row-h" id="ntColorRow" hidden><span class="inline-lbl">Colour</span><input type="color" id="ntColor" class="color-in" aria-label="Background colour"></div>
+          <div class="btn-row row-h" id="ntGradRow" hidden><span class="inline-lbl">Gradient</span><input type="color" id="ntGradA" class="color-in" aria-label="Gradient first colour"><input type="color" id="ntGradB" class="color-in" aria-label="Gradient second colour">
+            <span class="inline-lbl">Angle</span><input type="range" id="ntAngle" min="0" max="360" step="5" aria-label="Gradient angle"></div>
+          <label class="lbl" for="sBgEvery" id="sBgEveryLbl">Change the photo</label>
+          <select id="sBgEvery" class="field">
+            <option value="open">Every time no tab is open</option>
+            <option value="10">Every 10 minutes</option>
+            <option value="60">Every hour</option>
+            <option value="1440">Every day</option>
+          </select>
+          <div class="btn-row row-h">
+            <button id="sBgPick" class="import-btn" data-ic="image">Choose background photo…</button>
+            <button id="sBgRemove" class="import-btn" hidden>Remove your photo</button>
+          </div>
+          <p class="hint">The background fills the page area only; the sidebar keeps your Space’s colours. Mountain photos are from Unsplash (free licence); hover over one to see who took it. “Picture of the day” is Bing’s daily photo, downloaded once a day from bing.com.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-search" data-title="Search shortcuts" data-icon="search">
+        <h2>Search shortcuts</h2>
+        <div class="form">
+          <p class="hint">Type a keyword and a space in the command bar, like <b>w cats</b> or <b>yt lofi</b>. Sites with their own search are added as you visit them.</p>
+          <ul id="sKeywords" class="keywords"></ul>
+          <div class="btn-row row-h kw-add"><input id="sKwKey" class="field" placeholder="Keyword" maxlength="20" aria-label="Keyword"><input id="sKwUrl" class="field" placeholder="https://site/search?q=%s" aria-label="Search address with %s"><button id="sKwAdd" class="import-btn">Add</button></div>
+          <p class="hint" id="sKwMsg"></p>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-chains" data-title="Command chains" data-icon="link">
+        <h2>Command chains</h2>
+        <div class="form">
+          <p class="hint">Several commands in one go, with their own shortcut. Record one from the command bar (“Record a command chain”), or build it here.</p>
+          <ul id="sChains" class="chains"></ul>
+          <button id="sChainNew" class="import-btn" data-ic="link">New chain</button>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-pages" data-title="Pages" data-icon="file">
+        <h2>Pages</h2>
+        <div class="form">
+          <label class="lbl" for="sZoom">Default zoom</label>
+          <select id="sZoom" class="field">
+            <option value="0.75">75%</option><option value="0.8">80%</option><option value="0.9">90%</option><option value="1">100%</option><option value="1.1">110%</option>
+            <option value="1.25">125%</option><option value="1.5">150%</option><option value="1.75">175%</option><option value="2">200%</option>
+          </select>
+          <label class="lbl" for="sFont">Minimum font size</label>
+          <select id="sFont" class="field">
+            <option value="0">Off</option><option value="9">9 px</option><option value="10">10 px</option><option value="12">12 px</option><option value="14">14 px</option><option value="16">16 px</option><option value="18">18 px</option><option value="20">20 px</option>
+          </select>
+          <p class="hint">The minimum font size applies to pages opened from now on.</p>
+          <label class="check"><input type="checkbox" id="sAskDl"> Ask where to save each download</label>
+          <label class="lbl" for="sTrans">Translation</label>
+          <select id="sTrans" class="field">
+            <option value="local">On this PC (private, works when signed in)</option>
+            <option value="google">Google Translate (sends the address to Google)</option>
+          </select>
+          <label class="lbl">Video</label>
+          <label class="check"><input type="checkbox" id="sAutoPip"> Picture-in-picture when you switch away from a playing video</label>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-performance" data-title="Performance" data-icon="gauge">
+        <h2>Performance</h2>
+        <div class="form">
+          <label class="check"><input type="checkbox" id="sBattery"> Battery saver: on battery, background tabs sleep after 5 minutes <span id="sBatteryNow"></span></label>
+          <label class="lbl" for="sMem">Memory limit</label>
+          <select id="sMem" class="field">
+            <option value="0">No limit</option><option value="512">512 MB (tabs you haven’t used lately go to sleep)</option><option value="768">768 MB</option><option value="1024">1 GB</option><option value="2048">2 GB</option>
+            <option value="3072">3 GB</option><option value="4096">4 GB</option><option value="6144">6 GB</option><option value="8192">8 GB</option>
+          </select>
+          <label class="lbl" for="sSleep">Tab sleeping</label>
+          <select id="sSleep" class="field" aria-label="Put background tabs to sleep after">
+            <option value="0">Never put tabs to sleep</option><option value="5">Sleep after 5 minutes</option><option value="10">Sleep after 10 minutes (default)</option><option value="15">Sleep after 15 minutes</option>
+            <option value="30">Sleep after 30 minutes</option><option value="60">Sleep after 1 hour</option><option value="120">Sleep after 2 hours</option><option value="240">Sleep after 4 hours</option>
+          </select>
+          <p class="hint" id="sSleepHint">Sleeping tabs free their memory and reload when you click them.</p>
+          <label class="check"><input type="checkbox" id="sHwAccel"> Use hardware acceleration (turning it off saves about 300 MB of memory, but scrolling and video use more CPU; applies after a restart)</label>
+          <button id="sTaskMgr" class="import-btn" data-ic="chart">Task manager… (Shift+Esc)</button>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-access" data-title="Accessibility" data-icon="accessibility">
+        <h2>Accessibility</h2>
+        <div class="form">
+          <label class="check"><input type="checkbox" id="sCaret"> Caret browsing: a text cursor on pages, moved with the arrow keys (F7)</label>
+          <p class="hint">F6 moves the keyboard between the page, the sidebar and the top bar. In the sidebar, the arrow keys move between tabs and Enter opens one.</p>
+          <button id="sReadAloud" class="import-btn" data-ic="volume">Read this page aloud (Ctrl+Shift+U)</button>
+          <button id="sCaptions" class="import-btn" data-ic="message">Live captions for anything playing (Windows 11)</button>
+          <label class="lbl" for="sBreak">Take a break</label>
+          <div class="btn-row row-h"><select id="sBreak" class="field"><option value="5">5 minutes</option><option value="15" selected>15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select>
+            <button id="sBreakGo" class="import-btn" data-ic="coffee">Start</button></div>
+          <label class="lbl">Keyboard</label>
+          <button id="sKeys" class="import-btn" data-ic="keyboard">Keyboard shortcuts… (Ctrl+/ shows them all)</button>
+          <button id="sTour" class="import-btn" data-ic="compass">Show the welcome tour</button>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-privacy" data-title="Privacy and security" data-icon="shield">
+        <h2>Privacy and security</h2>
+        <div class="form">
+          <label class="check"><input type="checkbox" id="sBlockAds"> Block ads and trackers</label>
+          <label class="check"><input type="checkbox" id="sSafe"> Warn me about dangerous and deceptive sites</label>
+          <label class="check"><input type="checkbox" id="sHttps"> Always use secure connections (HTTPS)</label>
+          <label class="check"><input type="checkbox" id="sCookies"> Turn down cookie banners for me</label>
+          <label class="check"><input type="checkbox" id="sFp"> Protect against fingerprinting</label>
+          <label class="check"><input type="checkbox" id="sVpn"> VPN for this Space (free, Cloudflare WARP) <span id="sVpnWhere"></span></label>
+          <label class="check"><input type="checkbox" id="sVpnBtn"> Show the VPN button in the top bar</label>
+          <label class="check"><input type="checkbox" id="sClean"> Remove tracking from links (utm_, fbclid, gclid…) and skip redirect pages</label>
+          <label class="check"><input type="checkbox" id="sGpc"> Tell sites not to sell or share my data (Global Privacy Control)</label>
+          <label class="check"><input type="checkbox" id="sLockPriv"> Lock private windows with Windows Hello when I’m away</label>
+          <label class="lbl" for="sLockAfter">Locked Spaces and private windows lock again after Quasar is in the background for</label>
+          <select id="sLockAfter" class="field"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="60">1 hour</option></select>
+          <button id="sLockNow" class="import-btn" data-ic="lock">Lock now</button>
+          <p class="hint" id="sProtStatus"></p>
+          <button id="sFilters" class="import-btn">Update blocking and safety lists</button>
+          <label class="lbl">History</label>
+          <label class="check"><input type="checkbox" id="sHistText"> Find pages by what was on them (the command bar searches the text of pages you visited; kept only on this PC)</label>
+          <button id="sClear" class="danger">Clear browsing data…</button>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-updates" data-title="Updates" data-icon="refresh">
+        <h2>Updates</h2>
+        <div class="form">
+          <div class="ver-card" aria-labelledby="sVerTitle">
+            <div class="ver-head">
+              <div>
+                <div class="ver-k" id="sVerTitle">You're on</div>
+                <div class="ver-big">Quasar <span id="sVerQuasar"></span></div>
+                <div class="ver-kind" id="sVerKind"></div>
+              </div>
+              <span class="ver-pill" id="sVerPill" role="status"></span>
+            </div>
+            <dl class="ver-grid">
+              <dt>Latest version</dt><dd id="sVerLatest"></dd>
+              <dt>Last checked</dt><dd id="sVerChecked"></dd>
+              <dt>Engine</dt><dd id="sVerElectron"></dd>
+              <dt>Chromium</dt><dd id="sVerChrome"></dd>
+              <dt>Node.js</dt><dd id="sVerNode"></dd>
+              <dt>Windows</dt><dd id="sVerWin"></dd>
+            </dl>
+            <button id="sVerCopy" class="import-btn">Copy version info</button>
+          </div>
+          <p class="hint" id="sUpdStatus"></p>
+          <div class="upd-bar" id="sUpdBar" hidden><i id="sUpdBarFill"></i></div>
+          <label class="check"><input type="checkbox" id="sAutoUpd"> <span id="sAutoUpdLabel">Install security updates automatically (they take effect when Quasar restarts)</span></label>
+          <div class="btn-row">
+            <button id="sUpdCheck" class="import-btn">Check for updates</button>
+            <button id="sUpdInstall" class="import-btn" hidden>Restart to update</button>
+            <button id="sUpdMajor" class="import-btn" hidden></button>
+            <button id="sUpdRollback" class="import-btn" hidden></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-library" data-title="Library and windows" data-icon="book">
+        <h2>Library and windows</h2>
+        <div class="form">
+          <label class="lbl">Library</label>
+          <button id="sHistory" class="import-btn" data-ic="history">History…</button>
+          <button id="sDownloads" class="import-btn" data-ic="download">Downloads…</button>
+          <button id="sSites" class="import-btn" data-ic="sliders">Site settings and permissions…</button>
+          <label class="lbl">Passwords</label>
+          <button id="sPasswords" class="import-btn" data-ic="key">Saved passwords…</button>
+          <label class="lbl">Windows</label>
+          <button id="sNewWin" class="import-btn" data-ic="windows">New window</button>
+          <button id="sPrivate" class="import-btn" data-ic="incognito">New private window</button>
+          <button id="sQuit" class="import-btn" data-ic="power">Quit Quasar (all windows) — Ctrl+Shift+Q</button>
+          <label class="lbl">Default browser</label>
+          <button id="sDefault" class="import-btn" data-ic="star">Make Quasar my default browser…</button>
+        </div>
+      </section>
+
+      <section class="sec" id="sec-import" data-title="Import and export" data-icon="swap">
+        <h2>Import and export</h2>
+        <div class="form">
+          <button id="sImportArc" class="import-btn">Import from Arc…</button>
+          <button id="sImportBrowser" class="import-btn">Import from Chrome, Edge, Firefox, Brave, Opera…</button>
+          <div class="btn-row row-h">
+            <button id="sImportHtml" class="import-btn">Import bookmarks file…</button>
+            <button id="sExportHtml" class="import-btn">Export bookmarks file…</button>
+          </div>
+          <button id="sExportPw" class="import-btn">Export passwords (asks for Windows Hello)…</button>
+          <p class="hint keys">
+            Press <b>Ctrl+/</b> for every keyboard shortcut. Two-finger swipe on the sidebar switches Space.
+            Right-click a tab for split view, closing several tabs, moving it and more; drag a tab out to give it its own window.
+          </p>
+        </div>
+      </section>
+      <p class="set-none" id="setNone" hidden>No settings match that search.</p>
+    </main>
+  </div>
+
+  <script src="theme.js"></script>
+  <script src="icons.js"></script>
+  <script src="backgrounds/backgrounds.js"></script>
+  <script src="clocks.js"></script>
+  <script src="settings.js"></script>
+  <script src="inapp.js"></script>
+</body>
+</html>

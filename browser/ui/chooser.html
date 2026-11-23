@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Connect a device</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; font: 13px/1.4 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: #1D1730; background: #F7F5FC; }
+    body { display: flex; flex-direction: column; padding: 18px; gap: 12px; }
+    h1 { font-size: 15px; margin: 0; font-weight: 600; }
+    h1 b { font-weight: 700; }
+    p { margin: 0; opacity: .7; font-size: 12px; }
+    ul { list-style: none; margin: 0; padding: 4px; flex: 1; overflow-y: auto; background: #fff; border-radius: 10px; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
+    li { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 7px; cursor: default; }
+    li:hover { background: #F1EDFB; }
+    li.sel { background: #E4DCF7; }
+    li b { font-weight: 600; }
+    li small { opacity: .6; }
+    .empty { opacity: .6; padding: 18px; text-align: center; display: block; }
+    .scan { display: inline-block; width: 10px; height: 10px; border: 2px solid #6B5BD6; border-right-color: transparent; border-radius: 50%; animation: s 1s linear infinite; vertical-align: -1px; margin-right: 6px; }
+    @keyframes s { to { transform: rotate(360deg); } }
+    .btns { display: flex; justify-content: flex-end; gap: 8px; }
+    button { font: inherit; font-weight: 600; padding: 7px 16px; border-radius: 8px; border: 0; background: rgba(0,0,0,.07); color: inherit; }
+    button.primary { background: #6B5BD6; color: #fff; }
+    button:disabled { opacity: .45; }
+    @media (prefers-color-scheme: dark) {
+      html, body { background: #1E1D2E; color: #ECEAF8; }
+      ul { background: #27263A; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+      li:hover { background: #312F48; } li.sel { background: #3D3960; }
+      button { background: rgba(255,255,255,.1); }
+    }
+  </style>
+</head>
+<body>
+  <h1 id="head"></h1>
+  <p id="note"></p>
+  <ul id="list" role="listbox" aria-labelledby="head"></ul>
+  <div class="btns"><button id="cancel">Cancel</button><button id="ok" class="primary" disabled>Connect</button></div>
+  <script src="chooser.js"></script>
+</body>
+</html>

@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src * data: crx:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Quasar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <aside id="sidebar" aria-label="Sidebar: tabs and Spaces">
+    <div class="sb-top drag">
+      <button class="ib nodrag" id="toggleSidebar" title="Hide sidebar (Ctrl+S)"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M9 5v14"/></svg></button>
+      <button class="ib nodrag" id="little" title="Little Quasar (Ctrl+Alt+N)"><svg viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="11" rx="3"/><path d="M5 11h14"/></svg></button>    </div>
+
+    <section id="favorites" class="favorites"></section>
+
+    <section id="v-main" class="view">
+      <div class="private-note" id="privateNote" hidden data-ic="incognito">Private window: history, cookies and downloads are forgotten when you close it.</div>
+      <div class="space-head">
+        <button id="spaceEmoji" class="space-emoji" title="Edit Space (right-click for options)"></button>
+        <button id="spaceTitle" class="space-title" title="Edit Space (right-click for options)"></button>
+        <button class="ib sm" id="editSpace" title="Edit Space"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z"/></svg></button>
+      </div>
+      <ul id="pinned" class="list pinned" aria-label="Pinned tabs"></ul>
+      <div class="divider"><button id="newFolder" class="new-folder" title="New folder for pinned tabs">+ Folder</button></div>
+      <button id="newTab" class="row ghost"><span class="plus">+</span><span class="title">New Tab</span></button>
+      <ul id="today" class="list" aria-label="Today’s tabs"></ul>
+      <button id="clearToday" class="link">Clear</button>
+      <div class="sb-sec" id="sbDl" hidden>
+        <div class="sb-sec-h"><span>Downloads</span><button id="sbDlAll" class="sb-sec-more" title="All downloads (Ctrl+J)">All</button></div>
+        <ul id="sbDlList" class="list"></ul>
+      </div>
+      <div class="sb-sec" id="sbHist" hidden>
+        <div class="sb-sec-h"><span>History</span><button id="sbHistAll" class="sb-sec-more" title="All history (Ctrl+H)">All</button></div>
+        <ul id="sbHistList" class="list"></ul>
+      </div>
+    </section>
+
+    <section id="v-edit" class="view" hidden>
+      <div class="space-head"><div class="space-title">Edit Space</div>
+        <button class="ib sm" data-back title="Done"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></button></div>
+      <div class="form">
+        <div class="frow">
+          <input id="fEmoji" class="field emoji" maxlength="16" aria-label="Icon">
+          <input id="fName" class="field" aria-label="Name" placeholder="Space name">
+        </div>
+        <label class="lbl">Profile</label>
+        <select id="fProfile" class="field" aria-label="Profile"></select>
+        <p id="fProfileHint" class="hint isolated"></p>
+        <label class="lbl" for="fConn">Connection (this profile)</label>
+        <select id="fConn" class="field">
+          <option value="system">Windows proxy settings</option>
+          <option value="direct">Direct (no proxy)</option>
+          <option value="custom">My own proxy…</option>
+          <option value="vpn">VPN (free, Cloudflare WARP)</option>
+          <option value="tor">Tor (needs Tor Browser or Tor running)</option>
+        </select>
+        <input id="fProxy" class="field" placeholder="socks5://127.0.0.1:1080 or proxy.example.com:8080" hidden>
+        <p id="fConnMsg" class="hint"></p>
+        <label class="lbl" for="fSleep">Tab sleeping in this Space</label>
+        <select id="fSleep" class="field">
+          <option value="">Same as Settings</option><option value="0">Never put tabs to sleep</option><option value="5">After 5 minutes</option><option value="10">After 10 minutes</option><option value="15">After 15 minutes</option>
+          <option value="30">After 30 minutes</option><option value="60">After 1 hour</option><option value="120">After 2 hours</option><option value="240">After 4 hours</option><option value="480">After 8 hours</option>
+        </select>
+        <label class="check"><input type="checkbox" id="fLock"> Lock this Space with Windows Hello when I’m away</label>
+        <label class="lbl">Theme color</label>
+        <button id="fTheme" class="theme-btn"><span id="fThemePreview" class="theme-prev"></span><span>Edit theme color…</span></button>
+        <label class="lbl">Grain <span id="fGrainVal"></span></label>
+        <input id="fGrain" type="range" min="0" max="1" step="0.05">
+        <button id="fDelete" class="danger">Delete Space</button>
+      </div>
+    </section>
+
+    <section id="v-new" class="view" hidden>
+      <div class="space-head"><div class="space-title">New Space</div>
+        <button class="ib sm" data-back title="Cancel"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="ns">
+        <div class="ns-field">
+          <button id="nsEmoji" class="ns-emoji" title="Choose an emoji">
+            <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" stroke-dasharray="3 3"/><path d="M12 9v6M9 12h6"/></svg>
+          </button>
+          <input id="nsName" class="ns-input" placeholder="Space name..." maxlength="40" spellcheck="false" aria-label="Space name">
+        </div>
+        <div class="ns-field">
+          <span class="ns-ico"><svg viewBox="0 0 24 24"><path d="M8.5 9.5v.01M15.5 9.5v.01M8 14.5c1 1.4 2.4 2 4 2s3-.6 4-2"/></svg></span>
+          <select id="nsProfile" class="ns-select" aria-label="Profile"></select>
+          <span class="ns-info" title="A profile holds logins, cookies, history, pinned tabs, Favorites and saved passwords. Spaces on the same profile share them; each Space keeps its own open tabs and theme.">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg></span>
+        </div>
+        <div class="ns-field" id="nsNewProfileRow" hidden>
+          <span class="ns-ico"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+          <input id="nsProfileName" class="ns-input" placeholder="New profile name..." maxlength="40" spellcheck="false" aria-label="New profile name">
+        </div>
+        <p id="nsProfileHint" class="hint ns-hint"></p>
+        <button id="nsTheme" class="ns-field ns-btn">
+          <span class="ns-ico"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z"/></svg></span>
+          <span class="ns-btn-label">Choose a theme</span>
+          <span id="nsThemePrev" class="theme-prev" hidden></span>
+        </button>
+        <button id="nsCreate" class="ns-create">Create Space</button>
+      </div>
+    </section>
+
+    <section id="v-archive" class="view" hidden>
+      <div class="space-head"><div class="space-title">Archived tabs</div>
+        <button class="ib sm" data-back title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <p class="hint">Tabs you haven't looked at close automatically and land here.</p>
+      <ul id="archive" class="list"></ul>
+      <button id="clearArchive" class="link">Clear archive</button>
+    </section>
+
+    <section id="v-notes" class="view" hidden>
+      <div class="space-head"><div class="space-title">Notes</div>
+        <button class="ib sm" data-back title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <p class="hint">This Space's scratchpad. Select text on a page › right-click › Add to Notes keeps the page's address with it.</p>
+      <textarea id="noteNew" class="field note-new" rows="3" placeholder="Write a note… (Ctrl+Enter to save)"></textarea>
+      <ul id="notesList" class="notes"></ul>
+    </section>
+
+    <section id="v-later" class="view" hidden>
+      <div class="space-head"><div class="space-title">Read Later</div>
+        <button class="ib sm" data-back title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <button id="laterSave" class="import-btn" data-ic="plus">Save this page (Ctrl+Shift+D)</button>
+      <ul id="laterList" class="list"></ul>
+      <button id="laterClear" class="link">Remove the ones you've read</button>
+      <div class="lbl later-sec" id="videosHead" hidden>Saved videos (offline)</div>
+      <ul id="videoList" class="list"></ul>
+      <p class="hint" id="videosHint">Right-click a video › Save Video to Watch Offline. Sites that stream in small pieces (YouTube, Netflix) can’t be saved.</p>
+    </section>
+
+    <div id="emojiPicker" class="emoji-picker" hidden role="dialog" aria-label="Choose Space emoji">
+      <div class="ep-head">
+        <input id="epInput" class="field" placeholder="Type or paste an emoji (Win + .)" aria-label="Emoji">
+      </div>
+      <div id="epGrid" class="ep-grid"></div>
+      <button id="epRemove" class="ep-remove">Remove emoji</button>
+    </div>
+
+    <div id="themePicker" class="theme-picker" hidden role="dialog" aria-label="Edit theme color">
+      <div id="tpPad" class="tp-pad" title="Click to add a colour (up to 3)"></div>
+      <div class="tp-row">
+        <svg class="tp-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor" stroke="none"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+        <button id="tpMode" class="tp-switch" role="switch" aria-checked="false" aria-label="Dark mode"><span></span></button>
+        <svg class="tp-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor" stroke="none"/></svg>
+        <input id="tpIntensity" type="range" min="0" max="1" step="0.01" aria-label="Color intensity">
+      </div>
+      <div id="tpSwatches" class="tp-swatches"></div>
+    </div>
+
+    <div id="tabPreview" class="tab-preview" hidden></div>
+
+    <!-- Sites as sidebar panels: click to open beside the page; + adds the current site -->
+    <div id="panels" class="panels"></div>
+
+    <!-- Now playing: play/pause and next for a tab playing sound (not the one on screen) -->
+    <div id="media" class="media" hidden>
+      <button id="mediaOpen" class="media-art" title="Go to this tab"></button>
+      <div class="media-text"><div id="mediaTitle" class="media-title"></div><div id="mediaSub" class="media-sub"></div></div>
+      <div class="media-ctl">
+        <button id="mediaPrev" class="ib sm" title="Previous track"><svg viewBox="0 0 24 24"><path d="M7 6v12M18 6l-8 6 8 6z"/></svg></button>
+        <button id="mediaPlay" class="ib sm" title="Play / pause"></button>
+        <button id="mediaNext" class="ib sm" title="Next track"><svg viewBox="0 0 24 24"><path d="M17 6v12M6 6l8 6-8 6z"/></svg></button>
+        <button id="mediaMute" class="ib sm" title="Mute"></button>
+      </div>
+    </div>
+
+    <!-- Read aloud: what's being read, with pause and stop -->
+    <div id="speak" class="media speak" hidden role="region" aria-label="Reading aloud">
+      <span class="media-art speak-ico" aria-hidden="true" data-ic="volume"></span>
+      <div class="media-text"><div id="speakTitle" class="media-title"></div><div id="speakSub" class="media-sub"></div></div>
+      <div class="media-ctl">
+        <button id="speakPause" class="ib sm" title="Pause"></button>
+        <button id="speakStop" class="ib sm" title="Stop reading"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/></svg></button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+
+    <!-- Notes and Read Later, in their own row above the Space icons -->
+    <div class="sb-tools">
+      <button class="ib" id="notesBtn" title="Notes for this Space"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h5"/></svg></button>
+      <button class="ib" id="laterBtn" title="Read Later (Ctrl+Shift+D saves this page)"><svg viewBox="0 0 24 24"><path d="M7 3h10v18l-5-4-5 4z"/></svg><span id="laterCount" class="badge-n" hidden></span></button>
+    </div>
+    <div class="foot-line"></div>
+    <footer class="sb-foot">
+      <button class="ib" id="archiveBtn" title="Archived tabs"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/></svg></button>
+      <nav id="spaces" class="spaces"></nav>
+      <button class="ib" id="addSpace" title="New Space"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="ib" id="settingsBtn" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
+    </footer>
+    <div id="resizer" title="Drag to resize"></div>
+  </aside>
+
+  <header id="topbar" class="drag">
+    <button class="ib nodrag" id="showSidebar" title="Show sidebar (Ctrl+S)" hidden><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M9 5v14"/></svg></button>
+    <!-- Buttons the user can show, hide and move (Settings › Top bar, or right-click the top bar) -->
+    <span id="tbLeft" class="tb-slot"></span>
+    <div class="grow"></div>
+    <div id="urlPill" class="url-pill nodrag">
+      <button id="siteInfo" class="site-ico none" title="View site information" aria-label="View site information"></button>
+      <button id="urlBtn" class="url-btn" title="Edit URL (Ctrl+L)"><span id="urlText">Search or Enter URL…</span></button>
+      <button id="transBtn" class="pill-ico" title="Translate this page" hidden>文</button>
+      <button id="readerBtn" class="pill-ico" title="Reader mode (F9)" hidden><svg viewBox="0 0 24 24"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg></button>
+    </div>
+    <!-- status pills: only show when they have something to say, always next to the address -->
+    <button class="update-pill nodrag" id="updBtn" hidden><svg viewBox="0 0 24 24"><path d="M12 19V7M7 12l5-5 5 5"/></svg><span id="updText">Update</span></button>
+    <button class="vpn-pill nodrag" id="vpnBtn" title="VPN: off (click to turn on)" hidden>VPN</button>
+    <button class="shield nodrag" id="shield" title="Ads and trackers blocked on this page" hidden></button>
+    <button class="zoom-pill nodrag" id="zoomPill" title="Zoom (click for options)" hidden></button>
+    <button class="ib nodrag dl-btn" id="dlBtn" title="Downloads (Ctrl+J)" hidden><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="dl-ring" id="dlRing"></span></button>
+    <span id="tbRight" class="tb-slot"></span>
+    <div class="grow"></div>
+    <div class="winctl nodrag">
+      <button id="wMin" title="Minimize"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+      <button id="wMax" title="Maximize"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg></button>
+      <button id="wClose" class="close" title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <!-- every movable button lives here until it's placed -->
+    <div id="tbPool" hidden>
+      <button class="ib nodrag" data-tb="back" id="back" title="Back (Alt+←)"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="ib nodrag" data-tb="forward" id="forward" title="Forward (Alt+→)"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      <button class="ib nodrag" data-tb="reload" id="reload" title="Reload (Ctrl+R)"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></button>
+      <button class="ib nodrag" data-tb="home" id="homeBtn" title="Home"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 9.5V20h4v-6h4v6h4V9.5"/></svg></button>
+      <button class="ib nodrag" data-tb="newTab" id="newTabTop" title="New tab (Ctrl+T)"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="ib nodrag" data-tb="copyUrl" id="copyUrl" title="Copy URL (Ctrl+Shift+C)"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></button>
+      <span class="tb-group nodrag" data-tb="ext"><span id="extBar" class="ext-bar" hidden></span>
+        <button class="ib" id="extBtn" title="Extensions" hidden><svg viewBox="0 0 24 24"><path d="M9 3h4v3a2 2 0 1 0 4 0V3h4v6h-3a2 2 0 1 0 0 4h3v8h-6v-3a2 2 0 1 0-4 0v3H3v-8h3a2 2 0 1 0 0-4H3V3z"/></svg></button></span>
+      <button class="ib nodrag profile-btn" data-tb="profile" id="profileBtn" title="Profile and Spaces"><span id="profileInitial"></span></button>
+      <button class="ib nodrag" data-tb="little" id="littleTop" title="Little Quasar (Ctrl+Alt+N)"><svg viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="11" rx="3"/><path d="M5 11h14"/></svg></button>
+    </div>
+  </header>
+
+  <div id="splitUI" hidden></div>
+  <!-- compact mode: touching an edge brings the sidebar and top bar back -->
+  <div id="edgeS" class="edge edge-s" hidden></div>
+  <div id="edgeT" class="edge edge-t" hidden></div>
+  <main id="card">
+    <div class="card-bg" id="cardBg" aria-hidden="true"></div>
+    <!-- Start page: shown in the page area whenever no tab is open -->
+    <div class="empty nt" id="nt">
+      <div class="nt-slot nt-slot-top" id="ntTop"></div>
+      <div class="nt-mid">
+        <div class="focus-clock" id="focusClock" hidden>
+          <div class="fc-time" id="fcTime"></div>
+          <div class="fc-date" id="fcDate"></div>
+          <div class="fc-greet" id="fcGreet"></div>
+        </div>
+        <div class="empty-title" id="emptyTitle"></div>
+        <div class="nt-slot" id="ntCenter">
+          <form class="nt-search nodrag" id="ntSearch" role="search">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+            <input id="ntQ" autocomplete="off" spellcheck="false" aria-label="Search or type a web address">
+          </form>
+        </div>
+        <div class="nt-links" id="ntLinks" aria-label="Shortcuts"></div>
+        <div class="nt-widgets" id="ntWidgets"></div>
+        <button id="emptyNew" class="empty-btn">Press <kbd>Ctrl</kbd> <kbd>T</kbd> to open a page</button>
+      </div>
+      <div class="nt-slot nt-slot-bottom" id="ntBottom"></div>
+      <button class="nt-custom" id="ntCustom" title="Customize the start page"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z"/></svg><span>Customize</span></button>
+      <div class="nt-credit" id="ntCredit" hidden></div>
+    </div>
+  </main>
+
+  <script src="theme.js"></script>
+  <script src="theme-picker.js"></script>
+  <script src="icons.js"></script>
+  <script src="backgrounds/backgrounds.js"></script>
+  <script src="clocks.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

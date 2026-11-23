@@ -1,0 +1,104 @@
+{
+    "manifest_version":  3,
+    "name":  "Arc Night",
+    "version":  "1.0.0",
+    "description":  "Arc-style dark theme matched to Arc\u0027s navy Space: seamless frame and toolbar.",
+    "theme":  {
+                  "images":  {
+                                 "theme_frame":  "images/frame.png",
+                                 "theme_frame_inactive":  "images/frame.png",
+                                 "theme_toolbar":  "images/frame.png",
+                                 "theme_tab_background":  "images/frame.png",
+                                 "theme_tab_background_inactive":  "images/frame.png",
+                                 "theme_ntp_background":  "images/ntp.png"
+                             },
+                  "colors":  {
+                                 "bookmark_text":  [
+                                                       169,
+                                                       167,
+                                                       200
+                                                   ],
+                                 "frame":  [
+                                               27,
+                                               28,
+                                               53
+                                           ],
+                                 "frame_inactive":  [
+                                                        24,
+                                                        25,
+                                                        44
+                                                    ],
+                                 "ntp_background":  [
+                                                        45,
+                                                        45,
+                                                        84
+                                                    ],
+                                 "ntp_header":  [
+                                                    28,
+                                                    28,
+                                                    55
+                                                ],
+                                 "ntp_link":  [
+                                                  185,
+                                                  183,
+                                                  255
+                                              ],
+                                 "ntp_text":  [
+                                                  228,
+                                                  226,
+                                                  245
+                                              ],
+                                 "omnibox_background":  [
+                                                            38,
+                                                            38,
+                                                            69
+                                                        ],
+                                 "omnibox_text":  [
+                                                      228,
+                                                      226,
+                                                      245
+                                                  ],
+                                 "tab_background_text":  [
+                                                             169,
+                                                             167,
+                                                             200
+                                                         ],
+                                 "tab_background_text_inactive":  [
+                                                                      127,
+                                                                      125,
+                                                                      160
+                                                                  ],
+                                 "tab_text":  [
+                                                  233,
+                                                  231,
+                                                  247
+                                              ],
+                                 "toolbar":  [
+                                                 28,
+                                                 28,
+                                                 55
+                                             ],
+                                 "toolbar_button_icon":  [
+                                                             143,
+                                                             141,
+                                                             179
+                                                         ],
+                                 "toolbar_text":  [
+                                                      228,
+                                                      226,
+                                                      245
+                                                  ]
+                             },
+                  "tints":  {
+                                "frame_inactive":  [
+                                                       -1,
+                                                       0.85,
+                                                       0.6
+                                                   ]
+                            },
+                  "properties":  {
+                                     "ntp_background_alignment":  "center",
+                                     "ntp_background_repeat":  "no-repeat"
+                                 }
+              }
+}
