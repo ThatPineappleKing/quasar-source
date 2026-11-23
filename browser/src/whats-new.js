@@ -7,6 +7,12 @@ const { app } = require('electron');
 
 const NOTES = {
   // `items` can also hold { section, items } groups, shown under their own heading.
+  '1.6.1': {
+    title: 'What’s new in Quasar 1.6.1',
+    items: [
+      'Fixed the bottom of the sidebar to be more consistent with Arc: smaller, lighter icons, evenly spaced however many Spaces you have.',
+    ],
+  },
   '1.6.0': {
     title: 'What’s new in Quasar 1.6',
     items: [

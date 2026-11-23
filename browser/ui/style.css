@@ -272,6 +272,18 @@ body.private #spaces, body.private #addSpace { visibility: hidden; }
 .space-dot.on { opacity: 1; background: var(--pill); }
 .space-dot.drop { outline: 2px solid var(--fg); }
 .space-dot .ring { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+/* The bottom rows (Notes, Read Later · Archive, Spaces, +, Settings): Arc's size: small, light icons. */
+.sb-foot .ib, .sb-tools .ib { width: 28px; height: 28px; border-radius: 7px; }
+.sb-foot .ib svg, .sb-tools .ib svg { width: 17px; height: 17px; }
+/* Always evenly spaced: Archive, every Space, + and Settings sit in one row with equal
+   gaps between them, however many Spaces there are. (Not in the collapsed or top-bar
+   sidebar, which stack or scroll the Spaces.) Many Spaces shrink a little to fit. */
+body:not(.sb-top):not(.sb-collapsed) .sb-foot, body.sb-collapsed.sb-expanded:not(.sb-top) .sb-foot { justify-content: space-between; gap: 0; }
+body:not(.sb-top):not(.sb-collapsed) .sb-foot > .spaces, body.sb-collapsed.sb-expanded:not(.sb-top) .sb-foot > .spaces { display: contents; }
+.sb-foot .space-dot { flex: 0 1 22px; min-width: 16px; }
+.space-dot { width: 22px; height: 22px; border-radius: 6px; font-size: 12px; }
+.space-dot .ring { width: 6px; height: 6px; }
+.sb-tools .badge-n { top: -2px; right: -3px; }
 
 /* forms */
 .form { display: grid; gap: 8px; padding: 2px 2px 12px; }
