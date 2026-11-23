@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; media-src 'self' mediastream: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Quasar glass</title>
+  <!-- Glass blur backdrop (src/shell/appearance.js, glassBackdrop): a click-through window
+       the size of the screen, just under a Quasar window and cut to its outline. It shows
+       the screen behind Quasar, blurred. It never moves while Quasar is dragged, so the
+       blur stays exactly in place. -->
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+    video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: fill; pointer-events: none;
+      filter: blur(var(--blur, 28px)) saturate(1.15); }
+  </style>
+</head>
+<body>
+  <video id="v" muted hidden></video>
+  <script src="glass.js"></script>
+</body>
+</html>

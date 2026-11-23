@@ -319,6 +319,7 @@
   setting('sArchive', 'archiveAfterHours', val); setting('sAutoPip', 'autoPip'); setting('sSleep', 'sleepAfterMin', num);
   setting('sBlockAds', 'blockAds'); setting('sSafe', 'safeBrowsing'); setting('sHttps', 'httpsOnly');
   setting('sCookies', 'cookieBanners'); setting('sFp', 'fingerprinting'); setting('sAutoUpd', 'autoUpdate');
+  setting('aGlassBlur', 'glassBlur');
   setting('sClock24', 'clock24'); setting('sClockSec', 'clockSeconds');
   setting('sBgEvery', 'bgEvery', val);
   // sSide moved to the Sidebar section; same setting.
@@ -401,7 +402,9 @@
     rangeVal('aSize', st.uiFontSize ?? 13, v => `${v} px`);
     rangeVal('aRadius', st.radius ?? 10, v => `${v} px`);
     rangeVal('aBlur', st.blur ?? 16, v => (Number(v) ? `${v} px` : 'Off'));
-    rangeVal('aTrans', st.transparency ?? 0, v => (Number(v) ? `${Math.round(v * 100)}%` : 'Solid'));
+    rangeVal('aTrans', st.transparency || 0.35, v => `${Math.round(v * 100)}%`);
+    $('aGlassBlur').checked = st.glassBlur !== false;
+    $('aGlass').hidden = !(st.stylePreset === 'glass' || (st.transparency || 0) > 0);
   }
   function rangeVal(id, v, fmt) {
     if (document.activeElement !== $(id)) $(id).value = v;
@@ -415,7 +418,7 @@
   live('aSize', 'uiFontSize', v => `${v} px`);
   live('aRadius', 'radius', v => `${v} px`);
   live('aBlur', 'blur', v => (Number(v) ? `${v} px` : 'Off'));
-  live('aTrans', 'transparency', v => (Number(v) ? `${Math.round(v * 100)}%` : 'Solid'));
+  live('aTrans', 'transparency', v => `${Math.round(v * 100)}%`);
   const accentLive = throttled(v => setNow('accent', v), 80);
   $('aAccent').addEventListener('input', e => accentLive(e.target.value));
   $('aAccentAuto').onclick = () => setNow('accent', '');

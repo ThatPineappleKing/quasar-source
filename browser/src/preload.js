@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld('arch', {
   act: (name, ...args) => ipcRenderer.invoke('act', name, args),
   on: (channel, cb) => {
     const allowed = ['state', 'toast', 'command:open', 'find:result', 'little:state', 'little:focus-url', 'ui:space', 'ui:folder', 'lib:update', 'lib:show', 'layer:show', 'layer:hide', 'layer:peek', 'chooser:list', 'ui:view',
-      'ui:speak', 'ui:group', 'ui:f6', 'ui:focus', 'markup:init', 'tm:update'];
+      'ui:speak', 'ui:group', 'ui:f6', 'ui:focus', 'markup:init', 'tm:update', 'ui:glass'];
     if (!allowed.includes(channel)) return;
     ipcRenderer.on(channel, (e, data) => cb(data));
   },

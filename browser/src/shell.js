@@ -346,6 +346,7 @@ class Shell {
       case 'update:major': return this.updater.offerMajor();
       case 'update:rollback': return this.updater.rollback();
       case 'quitAll': return this.quitAll();
+      case 'app:restart': app.relaunch(); return this.quitAll();
       // pinned folders
       case 'pinnedMenu': return this.pinnedMenu(args[0], Number(args[1]) || 0, Number(args[2]) || 0);
       case 'movePinned': return this.movePinned(args[0], args[1] || null, args[2] === 'into' ? 'into' : 'before');

@@ -224,15 +224,16 @@
     // The top bar keeps the sidebar toggle when the sidebar's own top row isn't there.
     $('showSidebar').hidden = !st.sidebarHidden && side === 'left' && !hid.sb;
     $('showSidebar').title = st.sidebarHidden ? 'Show sidebar (Ctrl+S)' : 'Hide sidebar (Ctrl+S)';
-    // top bar colour / transparency
-    if (changed('tbColor', [st.tbColor, st.tbOpacity])) {
+    // top bar colour / transparency (glass has no tint: the colour comes back when glass is off)
+    const tbColor = (st.transparency || 0) > 0 ? '' : st.tbColor;
+    if (changed('tbColor', [tbColor, st.tbOpacity])) {
       const tb = $('topbar');
-      if (st.tbColor) {
+      if (tbColor) {
         const op = st.tbOpacity ?? 0.6;
-        tb.style.setProperty('--tb-bg', `color-mix(in srgb, ${st.tbColor} ${Math.round(op * 100)}%, transparent)`);
+        tb.style.setProperty('--tb-bg', `color-mix(in srgb, ${tbColor} ${Math.round(op * 100)}%, transparent)`);
         tb.classList.add('tinted');
         // Readable text on a strong tint.
-        if (op >= 0.5) tb.dataset.ink = ArchTheme.isDark([st.tbColor]) ? 'light' : 'dark'; else delete tb.dataset.ink;
+        if (op >= 0.5) tb.dataset.ink = ArchTheme.isDark([tbColor]) ? 'light' : 'dark'; else delete tb.dataset.ink;
       } else { tb.style.removeProperty('--tb-bg'); tb.classList.remove('tinted'); delete tb.dataset.ink; }
     }
     // toolbar buttons: left of the address, right of it, or hidden

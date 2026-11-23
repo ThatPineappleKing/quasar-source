@@ -676,11 +676,13 @@ body[class*="dens-"] .url-pill { height: min(28px, calc(var(--top) - 8px)); }
 /* ---- glass: blur behind floating surfaces */
 .toast, .tab-preview, .media { backdrop-filter: blur(var(--blur)); }
 
-/* ---- see-through window (Windows 11 acrylic shows the desktop, blurred, through the UI) */
-html.see-through body { background: transparent; }
+/* ---- glass: the window is see-through (with blur on, a backdrop window under it shows
+   what's behind, blurred: ui/glass.html). A neutral veil, never the Space's colours or the top bar tint. */
+html.see-through body { background: transparent; color-scheme: dark;
+  --base: #1c1c1f; --fg: #f4f4f5; --fg-muted: rgba(244,244,245,.6); --hover: rgba(255,255,255,.08);
+  --card: rgba(255,255,255,.10); --card-shadow: 0 1px 2px rgba(0,0,0,.35); --line: rgba(255,255,255,.10); --pill: rgba(255,255,255,.06); }
 html.see-through body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
-  background-image: var(--grain-tile, none), var(--bg); background-color: var(--base);
-  background-blend-mode: overlay, normal, normal, normal; opacity: var(--solid, 1); }
+  background: var(--base); opacity: var(--solid, 1); }
 
 /* =================================================================== start page */
 .nt { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; overflow-y: auto; overflow-x: hidden;

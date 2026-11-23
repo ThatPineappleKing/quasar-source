@@ -5,8 +5,9 @@
 // Every option is a key in st.settings, checked against SCHEMA before it's saved,
 // so a bad value (or a hand-edited / imported theme file) can never break the window.
 const fs = require('fs');
-const { dialog, Menu, net } = require('electron');
-const { TOP, uid, hostOf, toUrl, pinnedTabNodes } = require('./common');
+const path = require('path');
+const { BrowserWindow, dialog, Menu, net, screen, desktopCapturer } = require('electron');
+const { UI, PRELOAD, TOP, uid, hostOf, toUrl, pinnedTabNodes } = require('./common');
 const store = require('../store');
 
 // Buttons the top bar can show, in Settings › Top bar (status pills such as Update,
@@ -73,11 +74,12 @@ const SCHEMA = {
   radius: range(0, 20, 1),
   blur: range(0, 40, 1),
   transparency: range(0, 0.85, 0.01),
+  glassBlur: bool,
 };
 // What a theme file carries (Settings › Appearance › Export theme).
 const THEME_KEYS = ['tbHeight', 'urlDisplay', 'tbAutoHide', 'tbColor', 'tbOpacity', 'sbCollapsed', 'sbAutoHide', 'sbSections', 'tabStyle', 'density',
   'ntColor', 'ntGradient', 'ntAngle', 'ntWidgets', 'ntCols', 'ntTile', 'ntSearch', 'ntGreet', 'ntMessage', 'ntLayout',
-  'accent', 'uiFont', 'uiFontSize', 'radius', 'blur', 'transparency', 'clockStyle', 'clock24', 'clockSeconds', 'focusClock', 'bgChoice', 'bgEvery', 'sidebarSide', 'sidebarWidth', 'toolbar'];
+  'accent', 'uiFont', 'uiFontSize', 'radius', 'blur', 'transparency', 'glassBlur', 'clockStyle', 'clock24', 'clockSeconds', 'focusClock', 'bgChoice', 'bgEvery', 'sidebarSide', 'sidebarWidth', 'toolbar'];
 const LAYOUT_KEYS = new Set(['tbHeight', 'tbAutoHide', 'sbCollapsed', 'sbAutoHide', 'radius', 'density']);
 
 // Style presets: whole looks in one click (colours stay the Space's own).
@@ -155,7 +157,7 @@ class AppearancePart {
     if (key === 'ntWidgets' || key === 'ntSearch') s.ntLayout = 'custom';
     if (key === 'ntWidgets' && v.weather) this.weatherData(true);
     if (key === 'ntUnit') this.weatherData(true);
-    if (['tbHeight', 'density', 'radius', 'blur', 'transparency', 'uiFont', 'uiFontSize', 'tabStyle', 'accent', 'tbColor'].includes(key)) s.stylePreset = 'custom';
+    if (['tbHeight', 'density', 'radius', 'blur', 'uiFont', 'uiFontSize', 'tabStyle', 'accent', 'tbColor'].includes(key)) s.stylePreset = 'custom';
     this.afterAppearance(LAYOUT_KEYS.has(key) || key === 'transparency');
     return true;
   }
@@ -166,20 +168,126 @@ class AppearancePart {
   }
 
   // ------------------------------------------------------------ see-through window
-  // Windows 11 acrylic: the desktop shows, blurred, through the window's own
-  // background. The page itself always stays solid.
+  // Glass (Settings › Appearance › Style presets › Glass). Like Zen, the window itself
+  // is transparent, so whatever is behind it (other apps, the desktop) shows through
+  // the sidebar, top bar and empty tab area, under a neutral (untinted) veil of
+  // (1 - transparency). Web pages always stay solid.
+  // Blur: Windows' own acrylic isn't used. It turns into a flat grey box whenever
+  // Windows decides not to blur (inactive window, battery, some visual-effects
+  // settings). Instead each glass window gets a backdrop: a click-through window the
+  // size of the screen, kept just under the Quasar window (stackBackdrop) and cut to
+  // the Quasar window's outline. It captures the screen and shows it
+  // blurred (ui/glass.html). Both windows are left out of screen capture
+  // (WDA_EXCLUDEFROMCAPTURE), so the capture holds only what's behind Quasar. The
+  // backdrop itself never moves while Quasar is dragged, only its outline does, in
+  // step with the move, so the blur stays exactly in place.
+  // Side effect: while blur is on, screenshots and screen sharing see through Quasar.
+  // Electron can only make a window transparent when it's created, so turning
+  // glass on applies to new windows and after a restart.
+  seeThroughWanted() { return (this.st.settings.transparency || 0) > 0; }
+  glassBlurWanted() { return this.seeThroughWanted() && this.st.settings.glassBlur !== false; }
   windowBg(W = this.cur) {
-    if ((this.st.settings.transparency || 0) > 0) return '#00000000';
+    if (W?.transparent) return '#00000000';
     const sp = this.spaceById(W?.spaceId) || this.space;
     return sp?.colors?.[0] || '#1A1B32';
+  }
+  // Tells the backdrop page which screen to capture.
+  async sendGlass(W) {
+    const b = W?.backdrop;
+    if (!b || b.isDestroyed() || b.webContents.isDestroyed()) return;
+    const d = W.backdropDisplay;
+    let id = null;
+    try {
+      const srcs = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } });
+      id = (srcs.find(s => String(s.display_id) === String(d.id)) || srcs[0])?.id || null;
+    } catch { /* capture unavailable: glass stays clear */ }
+    if (b.isDestroyed() || W.backdrop !== b) return;
+    const msg = { on: !!id, id, blur: Math.max(12, this.st.settings.blur ?? 16) };
+    const key = JSON.stringify(msg);
+    if (W.glassKey === key) return;
+    W.glassKey = key;
+    b.webContents.send('ui:glass', msg);
+  }
+  // Cuts the backdrop to the Quasar window's outline (nb: where it's about to be).
+  placeBackdrop(W, nb) {
+    const b = W.backdrop, win = W.win;
+    if (!b || b.isDestroyed() || win.isDestroyed()) return;
+    const r = nb || win.getBounds(), d = W.backdropDisplay.bounds;
+    try { b.setShape([{ x: r.x - d.x, y: r.y - d.y, width: r.width, height: r.height }]); } catch { /* ignore */ }
+  }
+  // The window moved to another screen: the backdrop follows and captures that one.
+  backdropScreen(W) {
+    const b = W.backdrop, win = W.win;
+    if (!b || b.isDestroyed() || win.isDestroyed()) return;
+    const d = screen.getDisplayMatching(win.getBounds());
+    if (d.id !== W.backdropDisplay.id || JSON.stringify(d.bounds) !== JSON.stringify(W.backdropDisplay.bounds)) {
+      W.backdropDisplay = d;
+      b.setBounds(d.bounds);
+      this.sendGlass(W);
+    }
+    this.placeBackdrop(W);
+  }
+  glassBackdrop(W, on) {
+    const win = W.win;
+    if (!on || win.isDestroyed()) {
+      const b = W.backdrop;
+      if (!b) return;
+      W.backdrop = null; W.glassKey = null;
+      if (!b.isDestroyed()) b.destroy();
+      return;
+    }
+    if (W.backdrop && !W.backdrop.isDestroyed()) { this.sendGlass(W); return this.placeBackdrop(W); }
+    const d = screen.getDisplayMatching(win.getBounds());
+    const b = new BrowserWindow({
+      ...d.bounds, frame: false, transparent: true, backgroundColor: '#00000000', show: false, focusable: false,
+      skipTaskbar: true, resizable: false, movable: false, minimizable: false, maximizable: false, hasShadow: false, title: 'Quasar glass',
+      webPreferences: { preload: PRELOAD, contextIsolation: true, sandbox: true, nodeIntegration: false, backgroundThrottling: false },
+    });
+    W.backdrop = b; W.backdropDisplay = d; W.glassKey = null;
+    b.setIgnoreMouseEvents(true);
+    b.setContentProtection(true);
+    b.webContents.on('will-navigate', e => e.preventDefault());
+    b.webContents.on('did-finish-load', () => { W.glassKey = null; this.sendGlass(W); });
+    b.loadFile(path.join(UI, 'glass.html'));
+    this.placeBackdrop(W);
+    if (win.isVisible() && !win.isMinimized()) { b.showInactive(); this.stackBackdrop(W); }
+  }
+  // Puts the backdrop directly under its Quasar window. (Making the backdrop the Quasar
+  // window's owner would do this by itself, but costs Quasar its taskbar button.)
+  stackBackdrop(W) {
+    const b = W.backdrop, win = W.win;
+    if (!b || b.isDestroyed() || win.isDestroyed() || !b.isVisible()) return;
+    try { b.moveAbove(win.getMediaSourceId()); win.moveAbove(b.getMediaSourceId()); } catch { /* ignore */ }
   }
   applySeeThrough(W) {
     const win = W?.win;
     if (!win || win.isDestroyed()) return;
-    const on = (this.st.settings.transparency || 0) > 0;
-    if (W.seeThrough !== on) {
-      W.seeThrough = on;
-      try { win.setBackgroundMaterial?.(on ? 'acrylic' : 'none'); } catch { /* older Windows: falls back to a solid window */ }
+    if (W.transparent) {
+      const blur = this.glassBlurWanted();
+      if (W.capBlur !== blur) {
+        W.capBlur = blur;
+        try { win.setContentProtection(blur); } catch { /* ignore */ }
+      }
+      if (!W.glassHooked) {
+        W.glassHooked = true;
+        const place = (e, nb) => this.placeBackdrop(W, nb);
+        const toScreen = () => this.backdropScreen(W);
+        const showB = () => { const b = W.backdrop; if (b && !b.isDestroyed() && !win.isMinimized()) { b.showInactive(); this.stackBackdrop(W); } };
+        const hideB = () => { const b = W.backdrop; if (b && !b.isDestroyed()) b.hide(); };
+        win.on('will-move', place);      // before Windows moves it, so the outline moves in step
+        win.on('will-resize', place);
+        for (const e of ['move', 'resize', 'maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen']) win.on(e, () => this.placeBackdrop(W));
+        win.on('moved', toScreen);
+        win.on('show', showB); win.on('restore', showB);
+        win.on('focus', () => this.stackBackdrop(W));   // brought to the front: bring the backdrop with it
+        win.on('hide', hideB); win.on('minimize', hideB);
+        screen.on('display-metrics-changed', toScreen);
+        win.once('closed', () => { screen.removeListener('display-metrics-changed', toScreen); this.glassBackdrop(W, false); });
+      }
+      this.glassBackdrop(W, blur);
+    } else if (this.seeThroughWanted() && !this.glassRestartNoted) {
+      this.glassRestartNoted = true;
+      this.toast('Restart Quasar to make the window see-through.', null, [{ label: 'Restart now', act: ['app:restart'] }]);
     }
     try { win.setBackgroundColor(this.withWin(W, () => this.windowBg(W))); } catch { /* ignore */ }
   }

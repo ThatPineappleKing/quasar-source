@@ -49,6 +49,12 @@
           <p class="hint">Changes show straight away in the sidebar, top bar and start page, so you can watch them as you go.</p>
           <label class="lbl">Style presets</label>
           <div class="chip-row" id="aStyles" role="radiogroup" aria-label="Style presets"></div>
+          <div class="glass-opts" id="aGlass" hidden>
+            <label class="lbl" for="aTrans">Glass transparency <span class="val" id="aTransVal"></span></label>
+            <input type="range" id="aTrans" min="0.05" max="0.85" step="0.01">
+            <label class="check"><input type="checkbox" id="aGlassBlur"> Blur what's behind the window</label>
+            <p class="hint">Whatever is behind Quasar (other apps, your desktop) shows through the sidebar, top bar and empty tab area. Web pages stay solid. Glass has no colour tint: your Space colours and top bar colour come back when you pick another style. While blur is on, screenshots and screen sharing also see through Quasar. Switching to Glass from another style takes effect after a restart.</p>
+          </div>
           <label class="lbl">Colours for this Space</label>
           <div class="swatch-row" id="aColors" role="radiogroup" aria-label="Colour presets for this Space"></div>
           <p class="hint">Each Space keeps its own colours or gradient (up to 3 colours). For any colour: the pencil next to the Space name › Edit theme color.</p>
@@ -62,9 +68,6 @@
           <input type="range" id="aRadius" min="0" max="20" step="1">
           <label class="lbl" for="aBlur">Blur behind panels <span class="val" id="aBlurVal"></span></label>
           <input type="range" id="aBlur" min="0" max="40" step="1">
-          <label class="lbl" for="aTrans">Window transparency <span class="val" id="aTransVal"></span></label>
-          <input type="range" id="aTrans" min="0" max="0.85" step="0.01">
-          <p class="hint">Transparency lets your desktop show through the sidebar and top bar, blurred (Windows 11). Web pages always stay solid.</p>
           <label class="lbl">Share your setup</label>
           <div class="btn-row row-h"><button id="aExport" class="import-btn" data-ic="upload">Export theme…</button><button id="aImport" class="import-btn" data-ic="download">Import theme…</button></div>
           <p class="hint">A theme file holds these appearance, top bar, sidebar and start page settings plus this Space’s colours. Importing one asks before changing your Space’s colours, and can be undone.</p>

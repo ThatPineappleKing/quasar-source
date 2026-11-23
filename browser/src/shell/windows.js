@@ -42,10 +42,13 @@ class WindowsPart {
     }
     if (!this.spaceById(W.spaceId)) W.spaceId = this.st.activeSpaceId;
     if (!this.spaceById(W.spaceId)) W.spaceId = this.st.spaces[0].id;
+    // Window transparency on: a truly transparent window (it can only be made so here).
+    W.transparent = this.seeThroughWanted();
     W.win = new BrowserWindow({
       width, height, x, y, minWidth: 720, minHeight: 460,
       frame: false, show: false, icon: fs.existsSync(ICON) ? ICON : undefined,
-      backgroundColor: (this.st.settings.transparency || 0) > 0 ? '#00000000' : this.spaceById(W.spaceId).colors[0], title: priv ? 'Quasar (Private)' : 'Quasar',
+      ...(W.transparent ? { transparent: true } : {}),
+      backgroundColor: W.transparent ? '#00000000' : this.spaceById(W.spaceId).colors[0], title: priv ? 'Quasar (Private)' : 'Quasar',
       // Not sandboxed: its preload loads the extension toolbar (<browser-action-list>).
       // This window only ever shows Quasar's own local page (ui/index.html); web pages
       // are separate views and stay sandboxed.
@@ -56,7 +59,7 @@ class WindowsPart {
     if (!this.cur) this.cur = W;
     const win = W.win;
     win.loadFile(path.join(UI, 'index.html'));
-    this.applySeeThrough(W);   // Settings › Appearance › window transparency (Windows 11 acrylic)
+    this.applySeeThrough(W);   // Settings › Appearance › window transparency
     win.once('ready-to-show', () => { if (b.maximized) win.maximize(); win.show(); });
     win.on('focus', () => { if (this.wins.has(W)) this.cur = W; });
     for (const e of ['resize', 'maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen']) {

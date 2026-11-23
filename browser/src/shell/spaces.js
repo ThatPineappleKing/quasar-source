@@ -17,7 +17,7 @@ class SpacesPart {
       const p = pinnedTabNodes(this.spaceById(id).pinned).map(x => this.liveTab('pinned', x.id)).find(t => t && this.freeTab(t.id));
       target = p?.id;
     }
-    this.win.setBackgroundColor(this.space.colors[0]);
+    this.win.setBackgroundColor(this.windowBg());
     if (target) this.show(target); else this.showNothing();
     this.showLockIfNeeded();   // a Space locked with Windows Hello shows its lock screen
   }
@@ -48,7 +48,7 @@ class SpacesPart {
         intensity: c01(t.intensity),
       };
     }
-    if (id === this.curSpaceId) this.win.setBackgroundColor(sp.colors[0]);
+    if (id === this.curSpaceId) this.win.setBackgroundColor(this.windowBg());
     this.changed();
   }
 

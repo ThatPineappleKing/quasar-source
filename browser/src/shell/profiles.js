@@ -284,13 +284,17 @@ class ProfilesPart {
 
     const always = new Set(['fullscreen', 'clipboard-sanitized-write', 'pointerLock']);
     const ask = new Set(['media', 'geolocation', 'notifications', 'midi', 'midiSysex', 'clipboard-read', 'display-capture', 'idle-detection']);
+    // Glass blur: Quasar's own backdrop page (ui/glass.html, never a website) captures the
+    // screen behind a glass window (see glassBackdrop). Nothing else gets this without asking.
+    const glassCapture = (wc, perm) => perm === 'media' && this.glassBlurWanted()
+      && [...this.wins].some(W => W.backdrop && !W.backdrop.isDestroyed() && W.backdrop.webContents === wc);
     ses.setPermissionCheckHandler((wc, perm, origin) => {
-      if (always.has(perm)) return true;
+      if (always.has(perm) || glassCapture(wc, perm)) return true;
       if (perm === 'usb' || perm === 'serial' || perm === 'hid') return true;   // the site may ask; the device chooser decides (devices.js)
       return this.permissions.get(`${partition}|${origin}|${perm}`) === true;
     });
     ses.setPermissionRequestHandler(async (wc, perm, cb, details) => {
-      if (always.has(perm)) return cb(true);
+      if (always.has(perm) || glassCapture(wc, perm)) return cb(true);
       if (!ask.has(perm)) return cb(false);
       const origin = (() => { try { return new URL(details.requestingUrl).origin; } catch { return details.requestingUrl; } })();
       const key = `${partition}|${origin}|${perm}`;

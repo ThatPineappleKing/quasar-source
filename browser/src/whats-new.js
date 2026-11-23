@@ -7,6 +7,20 @@ const { app } = require('electron');
 
 const NOTES = {
   // `items` can also hold { section, items } groups, shown under their own heading.
+  '1.6.0': {
+    title: 'What’s new in Quasar 1.6',
+    items: [
+      { section: 'Glass', items: [
+        'A new Glass look: pick it in Settings › Appearance › Style presets. Whatever is behind Quasar (other apps, your desktop) shows through the sidebar, top bar and empty tab area. Web pages stay solid.',
+        'Choose how see-through it is, and turn on “Blur what’s behind the window” for a frosted look.',
+        'Glass applies to new windows, or after you restart Quasar.',
+        'While blur is on, screenshots and screen sharing can see through Quasar.',
+      ] },
+      { section: 'A cleaner design', items: [
+        'Quasar’s design has been reworked to feel more hand-made: simple outline icons instead of emoji, neutral shadows, tidier corners and text sizes, and clearer wording throughout.',
+      ] },
+    ],
+  },
   '1.5.3': {
     title: 'What’s new in Quasar 1.5.3',
     items: [
