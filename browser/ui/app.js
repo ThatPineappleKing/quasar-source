@@ -76,7 +76,7 @@
     setHTML($('reload'), a?.loading ? ICON.close : RELOAD_SVG);
     document.body.classList.toggle('inapp', !!S.inapp);   // no tab looks selected while Library is open
     const urlText = S.inapp ? ({ library: 'Library', passwords: 'Passwords', settings: 'Settings' }[S.inapp] || 'Quasar')
-      : a ? urlLabel(a) : 'Search or Enter URL…';
+      : a ? urlLabel(a) : 'Search or enter URL…';
     if ($('urlText').textContent !== urlText) $('urlText').textContent = urlText;
     $('urlText').classList.toggle('muted', !a);
     const sec = a ? (a.security || 'local') : 'none';
@@ -317,8 +317,8 @@
   $('sbHistAll').onclick = () => act('library', 'history');
 
   // ------------------------------------------------- start page (no tab open)
-  const WMO = c => (c === 0 ? ['☀️', 'Clear'] : c <= 2 ? ['⛅', 'Partly cloudy'] : c === 3 ? ['☁️', 'Cloudy'] : c <= 48 ? ['🌫️', 'Fog']
-    : c <= 57 ? ['🌦️', 'Drizzle'] : c <= 67 ? ['🌧️', 'Rain'] : c <= 77 ? ['🌨️', 'Snow'] : c <= 82 ? ['🌧️', 'Showers'] : c <= 86 ? ['🌨️', 'Snow showers'] : ['⛈️', 'Thunderstorm']);
+  const WMO = c => (c === 0 ? ['sun', 'Clear'] : c <= 2 ? ['wx-part', 'Partly cloudy'] : c === 3 ? ['cloud', 'Cloudy'] : c <= 48 ? ['wx-fog', 'Fog']
+    : c <= 57 ? ['wx-rain', 'Drizzle'] : c <= 67 ? ['wx-rain', 'Rain'] : c <= 77 ? ['wx-snow', 'Snow'] : c <= 82 ? ['wx-rain', 'Showers'] : c <= 86 ? ['wx-snow', 'Snow showers'] : ['wx-storm', 'Thunderstorm']);
   // Widgets that are on unless switched off: clock, date, greeting, shortcuts.
   const wOn = k => {
     const w = S.settings.ntWidgets || {};
@@ -449,7 +449,7 @@
           <p class="hint" id="ntPlaceErr"></p>`);
       } else {
         const [em, label] = WMO(w.code);
-        c.insertAdjacentHTML('beforeend', `<div class="nt-wx"><span class="nt-wx-ico" aria-hidden="true">${w.day || w.code > 3 ? em : '🌙'}</span><span class="nt-wx-t">${w.temp}°${w.unit.toUpperCase()}</span></div>
+        c.insertAdjacentHTML('beforeend', `<div class="nt-wx"><span class="nt-wx-ico" aria-hidden="true">${ArchIcons.svg(w.day || w.code > 3 ? em : 'moon')}</span><span class="nt-wx-t">${w.temp}°${w.unit.toUpperCase()}</span></div>
           <div class="nt-wx-sub">${esc(label)} · H ${w.hi}° L ${w.lo}°</div><p class="nt-place">${esc(w.place)}</p>`);
       }
       const f = c.querySelector('#ntPlaceForm');
@@ -1100,7 +1100,7 @@
     const list = S.readLater || [];
     if (!list.length) { $('laterList').innerHTML = '<li class="hint">Nothing saved. Right-click a page › Save to Read Later, or Ctrl+Shift+D.</li>'; return; }
     $('laterList').replaceChildren(...list.map(r => {
-      const li = rowEl({ ...r, title: r.title }, { cls: r.read ? 'read' : '', tools: `<button data-a="toggle" title="${r.read ? 'Mark as unread' : 'Mark as read'}">${r.read ? '↺' : '✓'}</button><button data-a="delete" title="Remove">${ICON.close}</button>` });
+      const li = rowEl({ ...r, title: r.title }, { cls: r.read ? 'read' : '', tools: `<button data-a="toggle" title="${r.read ? 'Mark as unread' : 'Mark as read'}">${ArchIcons.svg(r.read ? 'reset' : 'check')}</button><button data-a="delete" title="Remove">${ICON.close}</button>` });
       li.firstElementChild.onclick = e => { const a = e.target.closest('[data-a]')?.dataset.a; act('readLater', a || 'open', r.id); };
       return li;
     }));
@@ -1110,7 +1110,7 @@
     $('videosHead').hidden = !list.length;
     $('videoList').replaceChildren(...list.map(v => {
       const li = rowEl({ title: v.title, url: v.page, loading: v.saving }, { tools: v.saving ? '<span class="when">saving…</span>'
-        : `<span class="when">${v.size ? Math.round(v.size / 1048576) + ' MB' : ''}</span><button data-a="page" title="Open the page it came from">↗</button><button data-a="delete" title="Delete the saved video">${ICON.close}</button>` });
+        : `<span class="when">${v.size ? Math.round(v.size / 1048576) + ' MB' : ''}</span><button data-a="page" title="Open the page it came from">${ArchIcons.svg('external')}</button><button data-a="delete" title="Delete the saved video">${ICON.close}</button>` });
       li.firstElementChild.title = `${v.title}\nSaved from ${v.page}`;
       li.firstElementChild.onclick = e => { if (v.saving) return; const a = e.target.closest('[data-a]')?.dataset.a; act('video', a || 'open', v.id); };
       return li;

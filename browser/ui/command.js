@@ -183,7 +183,7 @@
   // ------------------------------------------------ "What's new" after an update
   function showWhatsNew({ version, title, items, from }) {
     $('sheetTitle').textContent = '';
-    $('sheetBody').innerHTML = `<div class="tour whatsnew"><div class="big">${ArchIcons.svg('sparkle')}</div><h2></h2><p class="wn-sub"></p></div>`;
+    $('sheetBody').innerHTML = `<div class="tour whatsnew"><div class="big">${ArchIcons.svg('info')}</div><h2></h2><p class="wn-sub"></p></div>`;
     const body = $('sheetBody');
     const box = body.querySelector('.whatsnew');
     body.querySelector('h2').textContent = title || 'What’s new';
@@ -223,7 +223,7 @@
 
   // ------------------------------------------------ first-start welcome tour
   const SLIDES = [
-    { big: 'sidebar', title: 'Welcome to Quasar', text: ['Your tabs live in the sidebar. Pinned tabs stay put; the tabs under “New Tab” are for today.',
+    { big: 'sidebar', title: 'Tabs and the sidebar', text: ['Your tabs live in the sidebar. Pinned tabs stay put; the tabs under “New Tab” are for today.',
       'Tabs you haven’t looked at in a while move to the Archive (the box icon at the bottom), so the list stays short.'] },
     { big: 'keyboard', title: 'The command bar', text: ['Press <kbd>Ctrl</kbd>+<kbd>T</kbd> to search, open a site, jump to any open tab, run a command, or do a quick sum.',
       '<kbd>Ctrl</kbd>+<kbd>L</kbd> edits the address of the tab you’re on.'] },
@@ -244,7 +244,7 @@
     $('sheetFoot').innerHTML = `<span class="grow"><span class="dots">${SLIDES.map((x, i) => `<i class="${i === slide ? 'on' : ''}"></i>`).join('')}</span></span>` +
       (last && tourInfo.arc ? '<button id="tArc">Import from Arc…</button>' : '') +
       (slide ? '<button id="tBack">Back</button>' : '<button id="tSkip">Skip</button>') +
-      `<button id="tNext" class="primary">${last ? 'Start browsing' : 'Next'}</button>`;
+      `<button id="tNext" class="primary">${last ? 'Done' : 'Next'}</button>`;
     const done = () => act('tour:done');
     if ($('tSkip')) $('tSkip').onclick = done;
     if ($('tBack')) $('tBack').onclick = () => { slide--; drawTour(); };

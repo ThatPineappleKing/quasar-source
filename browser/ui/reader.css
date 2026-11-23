@@ -1,18 +1,19 @@
 :root { --size: 20px; --width: 680px; }
 * { box-sizing: border-box; }
 body { margin: 0; transition: background .2s, color .2s; }
-body.t-light { --bg: #ffffff; --fg: #1d1b20; --muted: #6b6672; --line: #e6e1ea; --link: #4b3bb8; --bar: rgba(255,255,255,.92); }
-body.t-sepia { --bg: #f6efe2; --fg: #3b2f22; --muted: #7d6a55; --line: #e4d6bd; --link: #8a4b14; --bar: rgba(246,239,226,.94); }
-body.t-dark  { --bg: #1c1b1f; --fg: #e6e1e5; --muted: #a39ea8; --line: #36343b; --link: #b6a8ff; --bar: rgba(28,27,31,.94); }
+body.t-light { --bg: #ffffff; --fg: #1d1b20; --muted: #6b6672; --line: #e6e1ea; --link: #4b3bb8; --bar: #ffffff; }
+body.t-sepia { --bg: #f6efe2; --fg: #3b2f22; --muted: #7d6a55; --line: #e4d6bd; --link: #8a4b14; --bar: #f6efe2; }
+body.t-dark  { --bg: #1c1b1f; --fg: #e6e1e5; --muted: #a39ea8; --line: #36343b; --link: #b6a8ff; --bar: #1c1b1f; }
 body { background: var(--bg); color: var(--fg); }
 body.f-serif #page { font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif; }
 body.f-sans #page { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
 .bar { position: sticky; top: 0; z-index: 2; display: flex; gap: 4px; align-items: center; padding: 8px 14px; background: var(--bar);
-  backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); font: 13px "Segoe UI", system-ui, sans-serif; flex-wrap: wrap; }
+  border-bottom: 1px solid var(--line); font: 13px "Segoe UI", system-ui, sans-serif; flex-wrap: wrap; }
 .bar .grow { flex: 1; }
 .bar button { font: inherit; color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: 8px; height: 30px; padding: 0 10px; cursor: pointer; }
 .bar button:hover { border-color: var(--line); }
 .bar button.on { background: var(--line); }
+.bar button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -3px; }
 .themes { display: inline-flex; gap: 4px; margin: 0 4px; }
 .sw { width: 26px; padding: 0 !important; border: 1px solid var(--line) !important; }
 .sw.light { background: #fff !important; } .sw.sepia { background: #f6efe2 !important; } .sw.dark { background: #1c1b1f !important; }

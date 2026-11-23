@@ -89,7 +89,7 @@
     $('never').replaceChildren(...data.never.map(n => {
       const li = document.createElement('li');
       li.textContent = `${host(n.site)} · ${spaceName(n.profile)}`;
-      const b = document.createElement('button'); b.textContent = '✕'; b.title = 'Allow saving again';
+      const b = document.createElement('button'); b.innerHTML = ArchIcons.svg('close'); b.title = 'Allow saving again';
       b.onclick = async () => { await act('pwm:removeNever', n.profile, n.site); load(); };
       li.append(b);
       return li;
@@ -110,7 +110,7 @@
       s.textContent = [a.label ? a.name : '', a.street, a.line2, a.city, a.region, a.postal, a.country].filter(Boolean).join(', ') + ` · ${spaceName(a.profile)}`;
       main.append(b, s);
       const acts = document.createElement('span'); acts.className = 'acts';
-      acts.innerHTML = `<button data-a="edit" title="Edit">✎</button><button data-a="del" class="del" title="Delete">${ICON.del}</button>`;
+      acts.innerHTML = `<button data-a="edit" title="Edit">${ArchIcons.svg('pen')}</button><button data-a="del" class="del" title="Delete">${ICON.del}</button>`;
       acts.onclick = async ev => {
         const x = ev.target.closest('[data-a]')?.dataset.a;
         if (x === 'edit') openForm(a);
@@ -158,7 +158,7 @@
       s.textContent = [c.brand, c.month && c.year ? `expires ${String(c.month).padStart(2, '0')}/${c.year}` : '', c.name].filter(Boolean).join(' · ') + ` · ${spaceName(c.profile)}`;
       main.append(b, s);
       const acts = document.createElement('span'); acts.className = 'acts';
-      acts.innerHTML = `<button data-a="show" title="${shownCards.has(c.id) ? 'Hide' : 'Show'} number">${shownCards.has(c.id) ? ICON.eyeOff : ICON.eye}</button><button data-a="edit" title="Edit">✎</button><button data-a="del" class="del" title="Delete">${ICON.del}</button>`;
+      acts.innerHTML = `<button data-a="show" title="${shownCards.has(c.id) ? 'Hide' : 'Show'} number">${shownCards.has(c.id) ? ICON.eyeOff : ICON.eye}</button><button data-a="edit" title="Edit">${ArchIcons.svg('pen')}</button><button data-a="del" class="del" title="Delete">${ICON.del}</button>`;
       acts.onclick = async ev => {
         const x = ev.target.closest('[data-a]')?.dataset.a;
         if (x === 'show') { if (shownCards.has(c.id)) shownCards.delete(c.id); else { const n = await act('pwm:revealCard', c.id); if (n) shownCards.set(c.id, n); } renderCards(); }

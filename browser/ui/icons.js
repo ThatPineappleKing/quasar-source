@@ -83,6 +83,12 @@
     home: '<path d="M4 11l8-7 8 7M6 9.5V20h12V9.5"/>',
     check: '<path d="M5 12l5 5 9-10"/>',
     play: '<path d="M8 5v14l11-7z"/>',
+    // weather (start page)
+    'wx-part': '<path d="M8 3.5v1.5M3.5 8H5M4.8 4.8l1 1M11.2 4.8l-1 1"/><path d="M5.6 10.4A3 3 0 1 1 10.9 7.6"/><path d="M9 20a3.5 3.5 0 0 1-.5-7A5 5 0 0 1 18 12a4 4 0 0 1-.5 8z"/>',
+    'wx-fog': '<path d="M7 13a4 4 0 0 1-.6-8A6 6 0 0 1 18 4a4.5 4.5 0 0 1-.5 9"/><path d="M4 16h16M6 20h12"/>',
+    'wx-rain': '<path d="M7 15a4 4 0 0 1-.6-8A6 6 0 0 1 18 6a4.5 4.5 0 0 1-.5 9z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+    'wx-snow': '<path d="M7 15a4 4 0 0 1-.6-8A6 6 0 0 1 18 6a4.5 4.5 0 0 1-.5 9z"/><path d="M8 19h.01M12 19h.01M16 19h.01M10 22h.01M14 22h.01"/>',
+    'wx-storm': '<path d="M7 15a4 4 0 0 1-.6-8A6 6 0 0 1 18 6a4.5 4.5 0 0 1-.5 9z"/><path d="M13 15l-2.5 4h3L11 23"/>',
   };
   const svg = name => P[name] ? `<svg class="aic" viewBox="0 0 24 24" aria-hidden="true">${P[name]}</svg>` : '';
   const decorate = (root = document) => {

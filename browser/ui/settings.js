@@ -248,7 +248,7 @@
     list = list || await act('keywords', 'list') || [];
     $('sKeywords').replaceChildren(...list.map(k => {
       const li = document.createElement('li');
-      li.innerHTML = `<b></b><span class="kw-name"></span><button class="kw-x" title="Remove">✕</button>`;
+      li.innerHTML = `<b></b><span class="kw-name"></span><button class="kw-x" title="Remove">${ArchIcons.svg('close')}</button>`;
       li.querySelector('b').textContent = k.keyword;
       li.querySelector('.kw-name').textContent = k.name + (k.auto ? ' (added by the site)' : '');
       li.title = k.url;
@@ -274,7 +274,7 @@
       const li = document.createElement('li');
       li.className = 'chain';
       li.innerHTML = `<div class="chain-head"><input class="field chain-name" aria-label="Chain name"><input class="field chain-keys" placeholder="Shortcut" aria-label="Shortcut (press the keys)" readonly>
-        <button class="chain-run" title="Run now">${ArchIcons.svg('play')}</button><button class="chain-del" title="Delete chain">✕</button></div>
+        <button class="chain-run" title="Run now">${ArchIcons.svg('play')}</button><button class="chain-del" title="Delete chain">${ArchIcons.svg('close')}</button></div>
         <ol class="chain-steps"></ol><select class="field chain-add" aria-label="Add a step"><option value="">＋ Add a step…</option></select><p class="hint chain-msg"></p>`;
       const name = li.querySelector('.chain-name'), keys = li.querySelector('.chain-keys'), msg = li.querySelector('.chain-msg');
       name.value = c.name; keys.value = c.keys || '';
@@ -293,7 +293,7 @@
       li.querySelector('.chain-steps').replaceChildren(...c.steps.map((s, i) => {
         const st = document.createElement('li');
         st.textContent = title(s);
-        const x = document.createElement('button'); x.textContent = '✕'; x.title = 'Remove step';
+        const x = document.createElement('button'); x.innerHTML = ArchIcons.svg('close'); x.title = 'Remove step';
         x.onclick = async () => loadChains(await act('chains', 'update', { id: c.id, steps: c.steps.filter((_, j) => j !== i) }));
         st.append(x);
         return st;
@@ -610,7 +610,7 @@
     $('ntLinkList').replaceChildren(...(links.length ? links.map(l => {
       const li = document.createElement('li');
       li.draggable = true;
-      li.innerHTML = `<span class="grip" aria-hidden="true">⋮⋮</span><input class="field nl-icon" maxlength="2048" aria-label="Icon (emoji or image link)" placeholder="Icon"><input class="field nl-name" maxlength="40" aria-label="Name"><input class="field nl-url" aria-label="Address"><button class="kw-x" title="Remove">✕</button>`;
+      li.innerHTML = `<span class="grip" aria-hidden="true">⋮⋮</span><input class="field nl-icon" maxlength="2048" aria-label="Icon (emoji or image link)" placeholder="Icon"><input class="field nl-name" maxlength="40" aria-label="Name"><input class="field nl-url" aria-label="Address"><button class="kw-x" title="Remove">${ArchIcons.svg('close')}</button>`;
       const [ic, nm, ur] = li.querySelectorAll('input');
       ic.value = l.icon || ''; nm.value = l.title || ''; ur.value = l.url;
       const save = (k, el) => async () => { const r = await act('nt', 'linkEdit', { id: l.id, [k]: el.value }); $('ntLinkMsg').textContent = r?.error || 'Drag to reorder, here or on the start page. With no icon, the site’s own icon is used.'; };

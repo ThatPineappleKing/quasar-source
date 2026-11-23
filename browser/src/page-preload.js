@@ -644,14 +644,15 @@ if (window === window.top) {
     shadow = host.attachShadow({ mode: 'closed' });
     shadow.innerHTML = `<style>
       .box{font:13px/1.3 "Segoe UI",system-ui,sans-serif;background:#fff;color:#1d1730;border-radius:10px;min-width:260px;max-width:360px;
-        box-shadow:0 10px 30px rgba(20,10,50,.25),0 0 0 1px rgba(0,0,0,.06);padding:6px;}
+        box-shadow:0 10px 30px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);padding:6px;}
       .hd{font-size:11px;font-weight:600;opacity:.55;padding:4px 8px 6px;display:flex;align-items:center;gap:6px}
       .it{display:flex;align-items:center;gap:10px;padding:8px;border-radius:7px;cursor:default}
       .it:hover,.it.sel{background:#efe9fb}
       .k{width:22px;height:22px;border-radius:50%;background:#e4dcf7;display:grid;place-items:center;font-size:11px;font-weight:700;color:#5b3fb8;flex:none}
+      .k svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
       .u{flex:1;min-width:0;overflow:hidden}
       .u b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-      .u small{display:block;opacity:.6;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .u small{display:block;opacity:.6;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .mono{font-family:Consolas,"Cascadia Mono",monospace;letter-spacing:.3px}
       .d{opacity:.45;letter-spacing:2px}
     </style><div class="box"><div class="hd"></div><div class="list"></div></div>`;
@@ -666,6 +667,14 @@ if (window === window.top) {
     el.style.left = Math.max(4, Math.min(r.left, innerWidth - 300)) + 'px';
     el.style.top = Math.min(r.bottom + 4, innerHeight - 70) + 'px';
   }
+  // A small outline key (same drawing as Quasar's icon set), for "Use a strong password".
+  function keyIcon() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true');
+    const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', '7.5'); c.setAttribute('cy', '15.5'); c.setAttribute('r', '4.5');
+    const p = document.createElementNS(NS, 'path'); p.setAttribute('d', 'M10.7 12.3L20 3M17 6l3 3M14.5 8.5L17 11');
+    svg.append(c, p); return svg;
+  }
   // items: [{ icon, title, sub, mono, onPick }]
   function showPicker(field, header, items) {
     if (!items.length) return;
@@ -676,7 +685,8 @@ if (window === window.top) {
     list.replaceChildren(...items.map(item => {
       const it = document.createElement('div');
       it.className = 'it';
-      const k = document.createElement('span'); k.className = 'k'; k.textContent = item.icon;
+      const k = document.createElement('span'); k.className = 'k';
+      if (item.icon === 'key') k.append(keyIcon()); else k.textContent = item.icon;
       const u = document.createElement('span'); u.className = 'u';
       const b = document.createElement('b'); b.textContent = item.title; if (item.mono) b.className = 'mono';
       u.append(b);
@@ -697,8 +707,8 @@ if (window === window.top) {
       meterHost.style.cssText = 'position:fixed;z-index:2147483646;top:0;left:0;display:none;pointer-events:none;';
       const sh = meterHost.attachShadow({ mode: 'closed' });
       sh.innerHTML = `<style>
-        .m{font:11.5px/1.3 "Segoe UI",system-ui,sans-serif;background:#fff;color:#1d1730;border-radius:8px;padding:6px 8px;width:240px;
-          box-shadow:0 6px 18px rgba(20,10,50,.2),0 0 0 1px rgba(0,0,0,.06)}
+        .m{font:11px/1.3 "Segoe UI",system-ui,sans-serif;background:#fff;color:#1d1730;border-radius:8px;padding:6px 8px;width:240px;
+          box-shadow:0 6px 18px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.06)}
         .bar{display:flex;gap:3px;margin-bottom:4px}.bar i{flex:1;height:4px;border-radius:2px;background:#e6e1f2}
         .l{font-weight:600}.t{opacity:.7}</style><div class="m"><div class="bar"><i></i><i></i><i></i><i></i></div><span class="l"></span> <span class="t"></span></div>`;
       meter = sh;
@@ -772,7 +782,7 @@ if (window === window.top) {
       if (el.value) return;
       const pw = await ipcRenderer.invoke('pw', 'generate');
       if (!pw || document.activeElement !== el) return;
-      return showPicker(el, 'Quasar passwords', [{ icon: '✦', title: 'Use a strong password', sub: pw, onPick: () => fillNewPassword(el, pw) }]);
+      return showPicker(el, 'Quasar passwords', [{ icon: 'key', title: 'Use a strong password', sub: pw, onPick: () => fillNewPassword(el, pw) }]);
     }
     const pws = passwordFields();
     const isPw = el instanceof HTMLInputElement && el.type === 'password';
