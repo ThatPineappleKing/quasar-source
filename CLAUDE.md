@@ -49,7 +49,7 @@ Full guide: `PUBLISHING.md`. In short:
 
 Releases go to the **public** repo `ThatPineappleKing/quasar` (saved in `tools/github.json`).
 **Never change that owner/repo**: installed copies look for updates only there.
-The source code is backed up separately in the **private** repo `ThatPineappleKing/quasar-source`
+The source code is open source (MIT) in the **public** repo `ThatPineappleKing/quasar-source`
 (git remote `origin`). Never push source to the public releases repo.
 
 The installer isn't code-signed, so Windows SmartScreen warns on first install
