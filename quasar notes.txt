@@ -1,6 +1,2 @@
 quasar notes
 
-- add a version vewer inside settings
-
-
-

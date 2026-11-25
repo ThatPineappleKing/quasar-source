@@ -27,7 +27,7 @@
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false
     },
-    "publish": { "provider": "github", "owner": "YOUR-GITHUB-NAME", "repo": "quasar" }
+    "publish": { "provider": "github", "owner": "ThatPineappleKing", "repo": "quasar" }
   },
   "devDependencies": {
     "electron": "^45.3.1",
