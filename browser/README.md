@@ -1,6 +1,6 @@
 # Quasar
 
-**Version 1.7.1** · *(Formerly called Arch.)*
+**Version 2.0.0** · *(Formerly called Arch.)*
 
 An Arc-style browser built on Electron (the Chromium engine). Unlike the Chrome
 extension, it controls the whole window, so it can look like Arc: no title bar,

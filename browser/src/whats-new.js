@@ -7,6 +7,14 @@ const { app } = require('electron');
 
 const NOTES = {
   // `items` can also hold { section, items } groups, shown under their own heading.
+  '2.0.0': {
+    title: 'Quasar 2.0',
+    items: [
+      'Welcome to Quasar 2.0.',
+      'This is the final update for a while. Quasar keeps working as it is, and will still check for updates in case there’s a new one.',
+      'Quasar is becoming open source, so anyone can see how it works and build on it.',
+    ],
+  },
   '1.7.1': {
     title: 'What’s new in Quasar 1.7.1',
     items: [
