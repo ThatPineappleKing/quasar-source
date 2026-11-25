@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { app, BrowserWindow, WebContentsView, Menu, clipboard, dialog, screen } = require('electron');
 const { originOf, siteKey, generatePassword } = require('../passwords');
-const { PAGE_PRELOAD, ICON, RADIUS, hostOf, DRIFT_URL, pageUrl, toUrl } = require('./common');
+const { PAGE_PRELOAD, ICON, RADIUS, hostOf, DRIFT_URL, pageUrl, toUrl, stripCreds } = require('./common');
 
 class PagesPart {
   // --------------------------------------------------------------- views
@@ -25,7 +25,9 @@ class PagesPart {
   ensureView(tab) {
     if (tab.view) return tab.view;
     const minFont = Number(this.st.settings.minFontSize) || 0;
-    const view = this.pageView(tab, { prefs: minFont ? { minimumFontSize: minFont } : {} });
+    // Settings › Pages › Autoplay: "block" stops videos starting with sound until you click the page.
+    const prefs = { ...(minFont ? { minimumFontSize: minFont } : {}), ...(this.st.settings.autoplay === 'block' ? { autoplayPolicy: 'document-user-activation-required' } : {}) };
+    const view = this.pageView(tab, { prefs });
     this.wire(tab);
     this.extensions.addTab(view.webContents, (tab.host && this.wins.has(tab.host) ? tab.host : this.cur)?.win);
     // Waking a sleeping tab: reload it and put the scroll position back.
@@ -71,15 +73,17 @@ class PagesPart {
       if (tab.translatedFrom && !/\.translate\.goog$|^translate\.google\./i.test(hostOf(url))) tab.translatedFrom = null;
       // A page reloaded by "Forget this site" isn't recorded again; moving on is.
       if (tab.forgotUrl && tab.forgotUrl !== url) tab.forgotUrl = null;
+      url = stripCreds(url);   // (a user:password@ in the address is used, never kept)
       tab.url = url; if (tab.forgotUrl !== url) this.touchHistory(tab.spaceId, url, tab.title, true);
       this.applyZoom(tab);
+      this.applySiteSound(tab);
       this.changed();
     });
-    wc.on('did-navigate-in-page', (e, url, main) => { if (main && !this.isArchPage(url)) { tab.url = url; this.changed(); } });
-    wc.on('before-input-event', (e, input) => { if (tab.host && this.wins.has(tab.host)) this.cur = tab.host; this.focusPane(tab); this.onKey(e, input); });
+    wc.on('did-navigate-in-page', (e, url, main) => { if (main && !this.isArchPage(url)) { tab.url = stripCreds(url); this.changed(); } });
+    wc.on('before-input-event', (e, input) => { if (input.type === 'keyDown' || input.type === 'rawKeyDown') this.noteInput(tab); if (tab.host && this.wins.has(tab.host)) this.cur = tab.host; this.focusPane(tab); this.onKey(e, input); });
     // Split view: clicking into a pane makes it the active one.
     wc.on('focus', () => this.focusPane(tab));
-    wc.on('before-mouse-event', (e, m) => { if (m?.type === 'mouseDown') this.focusPane(tab); });
+    wc.on('before-mouse-event', (e, m) => { if (m?.type === 'mouseDown') { this.noteInput(tab); this.focusPane(tab); } });
     // Pinned tabs and Favorites open links to other sites in Peek, so the pinned page stays put.
     wc.on('will-navigate', e => {
       if ((tab.kind !== 'pinned' && tab.kind !== 'fav') || !e.isMainFrame || e.isSameDocument) return;
@@ -91,7 +95,7 @@ class PagesPart {
     });
     // Reader-mode button and translation offer depend on what the page is.
     wc.on('did-finish-load', () => { if (!this.isArchPage(wc.getURL())) { this.inspectPage(tab); setTimeout(() => this.indexPageText(tab), 1500); } });
-    wc.on('did-start-navigation', e => { if (e?.isMainFrame && !e.isSameDocument) { this.applyIdentity(wc, e.url); tab.readerable = false; tab.pageLang = ''; tab.translated = null; if (tab.media) { tab.media = null; this.push(); } } });
+    wc.on('did-start-navigation', e => { if (e?.isMainFrame && !e.isSameDocument) { this.applyIdentity(wc, e.url); tab.readerable = false; tab.pageLang = ''; tab.translated = null; tab.popupNoticed = false; tab.videoRate = 1; if (tab.blockedPopups?.length) { tab.blockedPopups = []; this.push(); } if (tab.media) { tab.media = null; this.push(); } } });
     // Ctrl + mouse wheel / pinch zoom, remembered per site.
     wc.on('zoom-changed', (e, dir) => this.zoom(dir === 'in' ? 1 : -1, tab));
     // Speaker icon in the sidebar for tabs playing sound.
@@ -103,6 +107,8 @@ class PagesPart {
     // Sign-in pop-ups get the same right-click menu, certificate warnings and "Leave site?" checks.
     wc.on('did-create-window', child => this.guard(child.webContents));
     wc.setWindowOpenHandler(({ url, disposition, features }) => {
+      // Pop-up blocker: windows and tabs a page opens without a click or key press first.
+      if (!this.popupAllowed(tab, wc)) { this.blockPopup(tab, url); return { action: 'deny' }; }
       // Real pop-ups (sign-in windows etc.) open as small windows so they keep working.
       if (disposition === 'new-window' && features) {
         return { action: 'allow', overrideBrowserWindowOptions: { width: 520, height: 680, autoHideMenuBar: true, icon: ICON } };
@@ -125,6 +131,7 @@ class PagesPart {
     if (wc.isDestroyed()) return;
     const tab = this.pageTabs.get(wc.id) || null;
     if (tab?.host && this.wins.has(tab.host)) this.cur = tab.host;
+    this.noteInput(tab);   // what the menu does counts as something you asked for
     const win = this.windowFor(tab, wc);
     const spaceId = tab?.spaceId || this.curSpaceId;
     const after = tab && this.tabs.has(tab.id) ? tab.id : null;
@@ -153,6 +160,8 @@ class PagesPart {
     if (p.mediaType === 'video' && tab && this.tabs.has(tab.id) && !this.spaceById(spaceId)?.private) items.push(
       { label: 'Save Video to Watch Offline', enabled: /^https?:/i.test(p.srcURL || ''), click: () => this.saveVideo(tab, p.srcURL) },
       { label: 'Copy Video Address', enabled: /^https?:/i.test(p.srcURL || ''), click: () => clipboard.writeText(p.srcURL) }, sep);
+    const speed = tab && this.tabs.has(tab.id) ? this.speedMenuItem(tab, p) : null;
+    if (speed) items.push(speed, sep);
     if (p.mediaType === 'image') items.push(
       { label: 'Open Image in New Tab', click: () => open(p.srcURL) },
       { label: 'Copy Image', click: () => wc.copyImageAt(p.x, p.y) },
@@ -208,6 +217,8 @@ class PagesPart {
       { label: this.isReaderPage(wc.getURL()) ? 'Exit Reader Mode' : 'Open in Reader Mode', accelerator: 'F9', registerAccelerator: false, visible: !!tab && this.tabs.has(tab?.id) && (!!tab.readerable || this.isReaderPage(wc.getURL())), click: () => this.openReader(tab) },
       { label: /\.translate\.goog$/i.test(hostOf(pageUrl)) || tab?.translated ? 'Show Original' : `Translate Page to ${this.langName(this.translateTo)}`, visible: !!tab && this.tabs.has(tab?.id) && /^(https?|file):/i.test(pageUrl), click: () => this.translatePage(tab) },
       { label: 'Copy Page URL', click: () => clipboard.writeText(pageUrl) },
+      { label: 'Share…', visible: !!tab && this.tabs.has(tab?.id) && /^https?:/i.test(pageUrl), click: () => this.sharePage(tab) },
+      { label: 'Cast…', visible: !!tab && this.tabs.has(tab?.id), click: () => this.withWin(this.hostOf(tab.id) || this.cur, () => this.castTab()) },
       { label: 'QR Code for This Page', visible: /^https?:/i.test(pageUrl), click: () => this.withWin(this.hostOf(tab?.id) || this.cur, () => this.showQr(tab && this.tabs.has(tab.id) ? tab : { url: pageUrl, title: wc.getTitle() })) },
       { label: 'Save to Read Later', visible: !!tab && this.tabs.has(tab?.id) && /^https?:/i.test(pageUrl) && !this.spaceById(spaceId)?.private, click: () => this.saveReadLater(tab) },
       { label: 'Read Page Aloud', accelerator: 'Ctrl+Shift+U', registerAccelerator: false, visible: !!tab && this.tabs.has(tab?.id) && !sel, click: () => this.withWin(this.hostOf(tab.id) || this.cur, () => this.readAloud(tab)) }, sep,
@@ -316,7 +327,7 @@ class PagesPart {
     });
     // A new page: reset its blocked-ads count.
     wc.on('did-start-navigation', (e) => {
-      if (e?.isMainFrame && !e.isSameDocument) { this.protection.counts.delete(id); this.push(); }
+      if (e?.isMainFrame && !e.isSameDocument) { this.protection.counts.delete(id); this.applyIdentity(wc, e.url); this.push(); }   // (identity: sign-in pop-ups too)
     });
     wc.on('did-navigate', (e, url) => {
       // Always-HTTPS: the secure address worked.

@@ -30,6 +30,10 @@ try {
   if (saved?.settings?.hardwareAcceleration === false) app.disableHardwareAcceleration();
 } catch { /* no state yet */ }
 
+// Keyboard media keys (play/pause, next, previous) go to the tab that's playing, through
+// Windows' media controls. Chromium does this by default; listed here so it stays on.
+app.commandLine.appendSwitch('enable-features', 'HardwareMediaKeyHandling');
+
 const { Shell } = require('./shell');
 const win32 = require('./windows-integration');
 
@@ -70,11 +74,20 @@ if (!app.requestSingleInstanceLock()) {
     if (shell) shell.openExternalLink(url);
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     Menu.setApplicationMenu(null);
+    // Widevine (Netflix, Disney+, Prime Video, Spotify…) exists only in castlabs' build of
+    // Electron, which adds `components`. Wait for it there; standard Electron has none.
+    const { components } = require('electron');
+    let widevine = false;
+    if (components?.whenReady) {
+      try { await Promise.race([components.whenReady(), new Promise((_, no) => setTimeout(() => no(new Error('timeout')), 15000))]); widevine = true; }
+      catch (err) { console.warn('Widevine not ready:', err?.message || err); }
+    }
     shell = new Shell();
+    shell.widevineReady = widevine;
     // Only plain data goes back to the UI; most actions return nothing.
-    const returns = new Set(['ready', 'cmd:query', 'cmd:suggest', 'addSpace', 'tabPreview', 'setProfileProxy', 'notes', 'readLater', 'keywords', 'chains', 'lock:unlock', 'background', 'nt', 'setting']);   // setting: only { error } for an address it couldn't use
+    const returns = new Set(['ready', 'cmd:query', 'cmd:suggest', 'addSpace', 'tabPreview', 'setProfileProxy', 'notes', 'readLater', 'keywords', 'chains', 'lock:unlock', 'background', 'nt', 'setting', 'siteTool']);   // siteTool: the pin picker's list   // setting: only { error } for an address it couldn't use
     ipcMain.handle('act', async (e, name, args) => {
       const r = await shell.act(e.sender, name, args);
       return returns.has(name) || /^(pwm|lib|chooser|ai|tm|mu):/.test(name) ? r : undefined;
@@ -104,6 +117,13 @@ if (!app.requestSingleInstanceLock()) {
       try { return host ? shell.protection.cosmeticFor(host, tokens.slice(0, 5000).filter(t => typeof t === 'string' && t.length < 256)) : ''; }
       catch { return ''; }
     });
+    // Chrome and Opera habits (src/shell/habits.js): touchpad swipes, the selection quick
+    // menu, sites offering to open email links, and pages asking for Widevine.
+    ipcMain.on('arch:swipe', (e, dir) => { if (e.senderFrame === e.sender.mainFrame && (dir === 'L' || dir === 'R') && shell.st.settings.swipeNav !== false) shell.onGesture(e.sender, dir, { swipe: true }); });
+    ipcMain.on('arch:quick', (e, op, text) => { if (e.senderFrame === e.sender.mainFrame && ['copy', 'search', 'translate', 'go'].includes(op)) shell.quickAct(e.sender, op, text); });
+    ipcMain.handle('arch:quick-convert', (e, text) => (e.senderFrame === e.sender.mainFrame && typeof text === 'string' ? shell.quickConvert(text.slice(0, 60)) : null));
+    ipcMain.on('arch:protocol-handler', (e, scheme, url) => { if (e.senderFrame === e.sender.mainFrame && typeof url === 'string' && url.length < 2048) shell.onProtocolHandler(e.sender, scheme, url); });
+    ipcMain.on('arch:drm', e => { if (e.senderFrame === e.sender.mainFrame) shell.onDrmMissing(e.sender); });
     ipcMain.on('arch:link-click', (e, href) => {
       if (typeof href === 'string' && href.length < 4096 && e.senderFrame === e.sender.mainFrame) shell.linkClicks.set(e.sender.id, { href, at: Date.now() });
     });
@@ -138,4 +158,13 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.on('window-all-closed', () => app.quit());
+
+  // Settings › Privacy › Delete cookies and site data when Quasar closes: done before exiting.
+  let cleared = false;
+  app.on('will-quit', e => {
+    if (cleared || !shell?.st.settings.clearOnExit) return;
+    e.preventDefault();
+    cleared = true;
+    shell.clearSiteDataOnExit().catch(() => {}).finally(() => app.quit());
+  });
 }

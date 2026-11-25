@@ -295,10 +295,15 @@ class ProfilesPart {
     });
     ses.setPermissionRequestHandler(async (wc, perm, cb, details) => {
       if (always.has(perm) || glassCapture(wc, perm)) return cb(true);
+      // Links to other apps (mailto:, tel:, zoommtg:…): see habits.js.
+      if (perm === 'openExternal') return this.onOpenExternal(wc, details, partition, cb).catch(() => cb(false));
       if (!ask.has(perm)) return cb(false);
       const origin = (() => { try { return new URL(details.requestingUrl).origin; } catch { return details.requestingUrl; } })();
       const key = `${partition}|${origin}|${perm}`;
       if (this.permissions.has(key)) return cb(this.permissions.get(key));
+      // Settings › Privacy › Notification requests: a quiet notice, or no asking at all.
+      if (perm === 'notifications' && this.st.settings.notifyPrompts === 'block') return cb(false);
+      if (perm === 'notifications' && this.st.settings.notifyPrompts === 'quiet') { this.quietNotificationAsk(wc, key, origin); return cb(false); }
       const what = { media: 'use your camera/microphone', geolocation: 'know your location', notifications: 'show notifications',
         'clipboard-read': 'read your clipboard', 'display-capture': 'see your screen' }[perm] || `use ${perm}`;
       const { response } = await dialog.showMessageBox(this.windowFor(this.pageTabs.get(wc?.id), wc), {
@@ -310,7 +315,9 @@ class ProfilesPart {
       cb(response === 0);
     });
 
-    ses.on('will-download', (e, item) => this.onDownload(ses, item));
+    ses.on('will-download', (e, item, wc) => { if (!this.holdAutoDownload(item, wc)) this.onDownload(ses, item); });
+    // Settings › Performance › Network limit.
+    if (Number(this.st.settings.netLimitKB) > 0) this.applyNetLimit(ses);
     // USB, serial, HID and Bluetooth device choosers.
     try { this.devices.setupSession(ses, partition); } catch { /* not supported */ }
     // Ad/tracker blocking, dangerous-site checks and Always-HTTPS.

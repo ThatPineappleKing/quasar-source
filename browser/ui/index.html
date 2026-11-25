@@ -11,7 +11,8 @@
   <aside id="sidebar" aria-label="Sidebar: tabs and Spaces">
     <div class="sb-top drag">
       <button class="ib nodrag" id="toggleSidebar" title="Hide sidebar (Ctrl+S)"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M9 5v14"/></svg></button>
-      <button class="ib nodrag" id="little" title="Little Quasar (Ctrl+Alt+N)"><svg viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="11" rx="3"/><path d="M5 11h14"/></svg></button>    </div>
+      <button class="ib nodrag" id="little" title="Little Quasar (Ctrl+Alt+N)"><svg viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="11" rx="3"/><path d="M5 11h14"/></svg></button>
+      <button class="ib nodrag dl-btn" id="dlBtn" title="Downloads (Ctrl+J)" aria-haspopup="menu"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="dl-ring" id="dlRing"></span></button>    </div>
 
     <section id="favorites" class="favorites"></section>
 
@@ -200,6 +201,7 @@
     <div id="urlPill" class="url-pill nodrag">
       <button id="siteInfo" class="site-ico none" title="View site information" aria-label="View site information"></button>
       <button id="urlBtn" class="url-btn" title="Edit URL (Ctrl+L)"><span id="urlText">Search or enter URL…</span></button>
+      <button id="popBtn" class="pill-ico pop-ico" title="Pop-ups blocked on this page" hidden><svg viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="11" rx="2"/><path d="M8 19h11a2 2 0 0 0 2-2V9"/><path d="M6 8l7 5M13 8l-7 5"/></svg></button>
       <button id="transBtn" class="pill-ico" title="Translate this page" hidden>文</button>
       <button id="readerBtn" class="pill-ico" title="Reader mode (F9)" hidden><svg viewBox="0 0 24 24"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></svg></button>
     </div>
@@ -208,7 +210,8 @@
     <button class="vpn-pill nodrag" id="vpnBtn" title="VPN: off (click to turn on)" hidden>VPN</button>
     <button class="shield nodrag" id="shield" title="Ads and trackers blocked on this page" hidden></button>
     <button class="zoom-pill nodrag" id="zoomPill" title="Zoom (click for options)" hidden></button>
-    <button class="ib nodrag dl-btn" id="dlBtn" title="Downloads (Ctrl+J)" hidden><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="dl-ring" id="dlRing"></span></button>
+    <!-- (a copy of the downloads button, for when the sidebar's top row isn't shown) -->
+    <button class="ib nodrag dl-btn dl-top" id="dlBtnTop" title="Downloads (Ctrl+J)" hidden><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="dl-ring"></span></button>
     <span id="tbRight" class="tb-slot"></span>
     <div class="grow"></div>
     <div class="winctl nodrag">
@@ -216,6 +219,8 @@
       <button id="wMax" title="Maximize"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg></button>
       <button id="wClose" class="close" title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
+    <!-- lock-menu items pinned to the top bar (src/shell/sitetools.js): placed between refresh and the address -->
+    <span id="siteTools" class="site-tools nodrag" role="toolbar" aria-label="Pinned site tools" hidden></span>
     <!-- every movable button lives here until it's placed -->
     <div id="tbPool" hidden>
       <button class="ib nodrag" data-tb="back" id="back" title="Back (Alt+←)"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>

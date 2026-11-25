@@ -137,6 +137,7 @@ class AppUpdater {
   onExit() {
     if (!this.ready || !this.restart || this._launched) return;   // otherwise autoInstallOnAppQuit installs it quietly
     this._launched = true;
+    this.shell.st.restoreNext = true;   // the updated Quasar reopens your tabs
     this.au.autoInstallOnAppQuit = false;   // this call starts the installer; the quit handler must not start another
     try { this.au.quitAndInstall(false, true); } catch { this.au.autoInstallOnAppQuit = true; /* it installs on quit instead */ }
   }

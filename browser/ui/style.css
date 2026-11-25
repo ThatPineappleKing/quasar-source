@@ -784,3 +784,19 @@ html.see-through body::before { content: ""; position: fixed; inset: 0; z-index:
 #card.bg-light { --fg: #231C36; --fg-muted: rgba(35,28,54,.6); --hover: rgba(255,255,255,.4); --card: rgba(255,255,255,.85); --pill: rgba(255,255,255,.5); --line: rgba(35,28,54,.1); }
 #card.bg-light .nt, #card.bg-light .fc-time { color: var(--fg); }
 #card.has-fill .card-bg::after { opacity: 0 !important; }
+
+/* The top-bar copy of the downloads button: only when the sidebar's top row is hidden. */
+body:not(.sb-right):not(.sb-top):not(.sb-hidden) #dlBtnTop { display: none; }
+
+/* Lock-menu items pinned to the top bar (src/shell/sitetools.js) */
+/* Their own rounded box like the address, placed (by app.js) exactly halfway between the
+   refresh button and the address. It's out of the row's flow, so the address never moves. */
+.site-tools { position: absolute; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 1px;
+  height: 28px; padding: 0 2px; border-radius: 8px; background: var(--pill); visibility: hidden; }
+.site-tools.placed { visibility: visible; }
+.site-tools[hidden] { display: none; }
+.site-tool { width: 24px; height: 24px; border-radius: 6px; }
+.site-tool svg { width: 15px; height: 15px; }
+body[class*="dens-"] .site-tools { height: min(28px, calc(var(--top) - 8px)); }
+.site-tool.on { color: var(--accent-ui, var(--fg)); background: color-mix(in srgb, var(--accent-ui, currentColor) 16%, transparent); }
+.site-tool.on:hover { background: color-mix(in srgb, var(--accent-ui, currentColor) 24%, transparent); }

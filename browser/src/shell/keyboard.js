@@ -55,7 +55,9 @@ class KeyboardPart {
       g.items.push({ id: sc.id, label: sc.label, keys: this.shortcutKeys(sc.id), defaults: sc.keys, custom: Array.isArray(this.st.settings.shortcuts?.[sc.id]) });
     }
     groups.push({ name: 'Fixed', items: [
-      { label: 'Switch to Space 1–9', keys: ['Ctrl+1 … 9'], fixed: true },
+      this.st.settings.ctrlNumber === 'tabs'
+        ? { label: 'Go to tab 1–8 (Ctrl+9: the last tab)', keys: ['Ctrl+1 … 9'], fixed: true }
+        : { label: 'Switch to Space 1–9', keys: ['Ctrl+1 … 9'], fixed: true },
       { label: 'Close Peek, the command bar or the screenshot picker', keys: ['Esc'], fixed: true },
       { label: 'Peek a link', keys: ['Shift+Click'], fixed: true },
       { label: 'Close a tab', keys: ['Middle-click'], fixed: true },
@@ -81,7 +83,7 @@ class KeyboardPart {
     if (k === 'escape' && this.cur?.layerMode === 'shot') this.hideLayer();
     else if (k === 'escape' && this.cur?.peek && !this.overlayMode) this.closePeek();
     else if (k === 'escape' && this.overlayMode && this.overlayMode !== 'break') this.closeCommand();
-    else if (c && !a && !input.shift && /^Digit[1-9]$/.test(input.code || '')) { const sp = this.visibleSpaces[Number(input.code.slice(5)) - 1]; if (sp) this.switchSpace(sp.id); }
+    else if (c && !a && !input.shift && /^(Digit|Numpad)[1-9]$/.test(input.code || '')) this.ctrlNumber(Number(input.code.slice(-1)));
     else if (c && input.shift && a && k === 'i') this.win.webContents.toggleDevTools();   // Quasar's own UI (for development)
     else hit = false;
     if (!hit) {
@@ -155,7 +157,27 @@ class KeyboardPart {
       case 'focus-back': return this.focusCycle(-1);
       case 'caret': return this.toggleCaret();
       case 'read-aloud': return this.readAloud();
+      case 'speed-up': return this.videoSpeed('up');
+      case 'speed-down': return this.videoSpeed('down');
+      case 'speed-normal': return this.videoSpeed(1);
+      case 'clear-data': return this.clearBrowsingData();
+      case 'reopen-window': return this.reopenClosedWindow();
     }
+  }
+
+  // Ctrl+1–9: Spaces (Arc) or, with Settings › General › Ctrl+number set to tabs, the
+  // tabs in sidebar order like Chrome and Opera (Ctrl+9 = the last one).
+  ctrlNumber(n) {
+    if (this.st.settings.ctrlNumber !== 'tabs') { const sp = this.visibleSpaces[n - 1]; if (sp) this.switchSpace(sp.id); return; }
+    const sp = this.space;
+    const ids = [];
+    const push = t => { if (t && !ids.includes(t.id)) ids.push(t.id); };
+    for (const f of sp.favorites || []) push(this.liveTab('fav', f.id) || { id: 'fav:' + f.id });
+    for (const id of this.order[sp.id] || []) push(this.tabs.get(id));
+    const pick = n === 9 ? ids[ids.length - 1] : ids[n - 1];
+    if (!pick) return;
+    if (pick.startsWith('fav:')) return this.openFavorite(pick.slice(4));
+    this.show(pick);
   }
 
   // F6 (like Chrome): keyboard focus goes page › sidebar › top bar › page.
@@ -190,6 +212,6 @@ const SHORTCUT_ACTIONS = { 'toggle-sidebar': 'toggle-sidebar', pin: 'pin', 'new-
   'copy-url': 'copy-url', 'zoom-in': 'zoom-in', 'zoom-out': 'zoom-out', 'zoom-reset': 'zoom-reset', fullscreen: 'fullscreen', screenshot: 'screenshot', reader: 'reader',
   'read-later': 'read-later', zap: 'zap', dark: 'dark', qr: 'qr', compact: 'compact', notes: 'notes', tidy: 'tidy', mute: 'mute', 'play-pause': 'play-pause',
   history: 'history', downloads: 'downloads', passwords: 'passwords', extensions: 'extensions', 'sleep-others': 'sleep-others', 'find-tabs': 'find-tabs',
-  'task-manager': 'task-manager', 'lock-now': 'lock-now', caret: 'caret', 'read-aloud': 'read-aloud', split: 'split', translate: 'translate', print: 'print' };
+  'task-manager': 'task-manager', 'clear-data': 'clear-data', 'reopen-window': 'reopen-window', 'lock-now': 'lock-now', caret: 'caret', 'read-aloud': 'read-aloud', split: 'split', translate: 'translate', print: 'print' };
 
 module.exports = KeyboardPart;

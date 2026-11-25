@@ -52,6 +52,18 @@
     renderUpdates();
     $('sArchive').value = String(S.settings.archiveAfterHours);
     $('sKeepTabs').checked = !!S.settings.keepTabs;
+    $('sSwitcher').checked = S.settings.tabSwitcher !== false;
+    $('sCtrlNum').value = S.settings.ctrlNumber === 'tabs' ? 'tabs' : 'spaces';
+    $('sSwipe').checked = S.settings.swipeNav !== false;
+    $('sQuick').checked = S.settings.quickMenu !== false;
+    $('sMailtoSite').hidden = !S.settings.mailtoSite;
+    if (S.settings.mailtoSite) $('sMailtoSite').textContent = S.settings.mailtoSite.name || 'A site you allowed';
+    $('sMailto').value = S.settings.mailto || '';
+    $('sAutoplay').value = S.settings.autoplay === 'block' ? 'block' : 'allow';
+    $('sNet').value = String(S.settings.netLimitKB || 0);
+    $('sNotify').value = S.settings.notifyPrompts || 'ask';
+    $('sPopToast').checked = S.settings.popupToast !== false;
+    $('sClearExit').checked = !!S.settings.clearOnExit;
     $('sTrans').value = S.settings.translateEngine === 'google' ? 'google' : 'local';
     $('sCompact').checked = !!S.settings.compact;
     $('sGestures').checked = S.settings.gestures !== false;
@@ -322,6 +334,9 @@
   setting('aGlassBlur', 'glassBlur');
   setting('sClock24', 'clock24'); setting('sClockSec', 'clockSeconds');
   setting('sBgEvery', 'bgEvery', val);
+  setting('sSwitcher', 'tabSwitcher'); setting('sCtrlNum', 'ctrlNumber', val); setting('sSwipe', 'swipeNav'); setting('sQuick', 'quickMenu');
+  setting('sMailto', 'mailto', val); setting('sAutoplay', 'autoplay', val); setting('sNet', 'netLimitKB', num); setting('sNotify', 'notifyPrompts', val);
+  setting('sPopToast', 'popupToast'); setting('sClearExit', 'clearOnExit');
   // sSide moved to the Sidebar section; same setting.
 
   $('sVpn').onchange = e => act('vpn', e.target.checked);

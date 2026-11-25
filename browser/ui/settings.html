@@ -32,13 +32,30 @@
           </select>
           <label class="lbl">Tabs</label>
           <label class="check"><input type="checkbox" id="sKeepTabs"> Continue where you left off (open tabs stay when Quasar closes, until they're archived)</label>
+          <p class="hint">Even with this off, your tabs come back after a crash, a Windows restart or an update.</p>
           <label class="lbl" for="sCycle">Ctrl+Tab goes to</label>
           <select id="sCycle" class="field">
             <option value="mru">The tab you used last (hold Ctrl to go further back)</option>
             <option value="order">The next tab in the sidebar</option>
           </select>
+          <label class="check"><input type="checkbox" id="sSwitcher"> Show pictures of the tabs while holding Ctrl+Tab</label>
+          <label class="lbl" for="sCtrlNum">Ctrl+1 to Ctrl+9</label>
+          <select id="sCtrlNum" class="field">
+            <option value="spaces">Switch Spaces (like Arc)</option>
+            <option value="tabs">Go to tabs 1–8, Ctrl+9 the last tab (like Chrome and Opera)</option>
+          </select>
           <label class="check"><input type="checkbox" id="sPreviews"> Show a preview when hovering over a tab</label>
           <label class="check"><input type="checkbox" id="sCompact"> Compact mode: hide the sidebar and top bar until the mouse reaches the edge (Ctrl+Shift+L)</label>
+          <label class="check"><input type="checkbox" id="sSwipe"> Two-finger swipe on a touchpad goes back and forward (on pages; on the sidebar it switches Space)</label>
+          <label class="check"><input type="checkbox" id="sQuick"> Quick menu when you select text: copy, search, translate, and convert prices and units</label>
+          <label class="lbl" for="sMailto">Email links (mailto:) open in</label>
+          <select id="sMailto" class="field">
+            <option value="">Windows’ email app (asks first)</option>
+            <option value="gmail">Gmail</option>
+            <option value="outlook">Outlook.com</option>
+            <option value="yahoo">Yahoo Mail</option>
+            <option value="site" id="sMailtoSite" hidden>A site you allowed</option>
+          </select>
           <label class="check"><input type="checkbox" id="sGestures"> Mouse gestures (hold the right button and draw: ← back, → forward, ↓ new tab, ↓→ close, ↑↓ reload)</label>
         </div>
       </section>
@@ -243,6 +260,12 @@
             <option value="google">Google Translate (sends the address to Google)</option>
           </select>
           <label class="lbl">Video</label>
+          <label class="lbl" for="sAutoplay">Autoplay</label>
+          <select id="sAutoplay" class="field">
+            <option value="allow">Let videos play with sound by themselves</option>
+            <option value="block">Don’t play with sound until I click the page (muted videos still play)</option>
+          </select>
+          <p class="hint">Applies to pages opened from now on. Right-click a video page › Video Speed for 1.25×, 1.5×, 2×…</p>
           <label class="check"><input type="checkbox" id="sAutoPip"> Picture-in-picture when you switch away from a playing video</label>
         </div>
       </section>
@@ -256,6 +279,12 @@
             <option value="0">No limit</option><option value="512">512 MB (tabs you haven’t used lately go to sleep)</option><option value="768">768 MB</option><option value="1024">1 GB</option><option value="2048">2 GB</option>
             <option value="3072">3 GB</option><option value="4096">4 GB</option><option value="6144">6 GB</option><option value="8192">8 GB</option>
           </select>
+          <label class="lbl" for="sNet">Network limit</label>
+          <select id="sNet" class="field">
+            <option value="0">No limit</option><option value="128">128 KB/s</option><option value="256">256 KB/s</option><option value="512">512 KB/s</option>
+            <option value="1024">1 MB/s</option><option value="2048">2 MB/s</option><option value="5120">5 MB/s</option><option value="10240">10 MB/s</option>
+          </select>
+          <p class="hint">Caps how much of your connection Quasar uses (downloads and pages), so games and calls on the same Wi-Fi stay smooth.</p>
           <label class="lbl" for="sSleep">Tab sleeping</label>
           <select id="sSleep" class="field" aria-label="Put background tabs to sleep after">
             <option value="0">Never put tabs to sleep</option><option value="5">Sleep after 5 minutes</option><option value="10">Sleep after 10 minutes (default)</option><option value="15">Sleep after 15 minutes</option>
@@ -294,6 +323,14 @@
           <label class="check"><input type="checkbox" id="sVpn"> VPN for this Space (free, Cloudflare WARP) <span id="sVpnWhere"></span></label>
           <label class="check"><input type="checkbox" id="sVpnBtn"> Show the VPN button in the top bar</label>
           <label class="check"><input type="checkbox" id="sClean"> Remove tracking from links (utm_, fbclid, gclid…) and skip redirect pages</label>
+          <label class="lbl" for="sNotify">Notification requests</label>
+          <select id="sNotify" class="field">
+            <option value="ask">Ask me each time</option>
+            <option value="quiet">Use quieter messaging (a small notice instead of a prompt)</option>
+            <option value="block">Don’t allow sites to ask</option>
+          </select>
+          <label class="check"><input type="checkbox" id="sPopToast"> Tell me when a pop-up is blocked (the address bar always shows it)</label>
+          <label class="check"><input type="checkbox" id="sClearExit"> Delete cookies and site data when Quasar closes (you’ll be signed out of sites; passwords, history and pinned tabs are kept)</label>
           <label class="check"><input type="checkbox" id="sGpc"> Tell sites not to sell or share my data (Global Privacy Control)</label>
           <label class="check"><input type="checkbox" id="sLockPriv"> Lock private windows with Windows Hello when I’m away</label>
           <label class="lbl" for="sLockAfter">Locked Spaces and private windows lock again after Quasar is in the background for</label>

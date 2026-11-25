@@ -323,7 +323,8 @@ class Protection {
     const css = (ads ? this.cssFor(host) : '') + (cookies ? this.cssFor(host, 'cookies') : '');
     return { block: ads || cookies, css, youtube: ads && isYouTube(host), skipper: ads, fp: this.fpOn && host && !allowed ? this.fpSeed(host) : null,
       gestures: this.settings.gestures !== false, gpc: this.gpcOn, identity: host ? this.shell.identityFor(host) : null,
-      caret: !!this.settings.caretBrowsing, autoScroll: this.settings.autoScroll !== false, otp: true };
+      caret: !!this.settings.caretBrowsing, autoScroll: this.settings.autoScroll !== false, otp: true,
+      swipe: this.settings.swipeNav !== false, quickMenu: this.settings.quickMenu !== false };
   }
 
   // Same number for every page of a site (so the site works consistently), different
@@ -603,7 +604,7 @@ class Protection {
         if (this.gpcOn) headers['Sec-GPC'] = '1';
         // Only work out the page's site when some site has its own browser identity.
         const ids = this.shell.st.siteIdentity;
-        if (!ids || !Object.keys(ids).length) return cb({ requestHeaders: headers });
+        if ((!ids || !Object.keys(ids).length) && this.settings.googleSignInFix === false) return cb({ requestHeaders: headers });   // (Google's sign-in page has a built-in identity: see identityFor)
         const wc = d.webContents;
         const pageHost = d.resourceType === 'mainFrame' || d.resourceType === 'subFrame' || !wc || wc.isDestroyed() ? hostOf(d.url) : hostOf(wc.getURL());
         const kind = pageHost && this.shell.identityFor(pageHost);

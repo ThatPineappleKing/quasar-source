@@ -80,6 +80,7 @@ class ArcPart {
     this.st.settings.arcImported = true;
     const first = this.st.spaces.find(s => s.arcId === fresh[0]?.arcId);
     this.switchSpace((first || this.st.spaces[0]).id);
+    this.scheduleIconFill();
     this.toast(`Imported ${fresh.length} Spaces, ${favCount} Favorites${hist ? `, ${hist} history entries` : ''} from Arc`);
   }
 

@@ -110,3 +110,45 @@ body.break-mode #scrim { background: rgba(14, 12, 24, .97); }
 [data-dark="1"] { --surface: color-mix(in srgb, var(--base, #1E1D34) 72%, rgba(12,12,16,.97)); }
 .bar, .sheet, .find { scrollbar-color: color-mix(in srgb, currentColor 30%, transparent) transparent; }
 .bar *, .sheet * { scrollbar-color: inherit; }
+
+/* Downloads drop-down: under the button at the top left of the sidebar (like Arc and Chrome) */
+body.dl-mode #scrim { background: transparent; }
+.dlpop { position: fixed; width: 330px; background: var(--surface, #fff); color: #1D1730; border-radius: 12px; padding: 6px;
+  box-shadow: 0 12px 36px rgba(20, 10, 50, .28), 0 0 0 1px rgba(0, 0, 0, .07); animation: dlin .14s ease-out; font-size: 13px; }
+@keyframes dlin { from { opacity: 0; transform: translateY(-4px); } }
+.dl-head { font-size: 11.5px; font-weight: 700; opacity: .55; padding: 4px 8px 6px; }
+.dl-items { list-style: none; margin: 0; padding: 0; }
+.dl-item { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; cursor: default; outline: none; }
+.dl-item:hover, .dl-item:focus-visible { background: var(--sel, rgba(120, 90, 220, .12)); }
+.dl-item.gone { opacity: .55; }
+.dl-ic { width: 28px; height: 28px; flex: none; display: grid; place-items: center; }
+.dl-ic img { width: 28px; height: 28px; object-fit: contain; }
+.dl-ic svg { width: 22px; height: 22px; opacity: .7; }
+.dl-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dl-t b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dl-t small { font-size: 11.5px; opacity: .65; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dl-bar { display: block; height: 3px; border-radius: 2px; background: rgba(127, 127, 127, .25); overflow: hidden; margin-top: 2px; }
+.dl-bar i { display: block; height: 100%; background: currentColor; border-radius: 2px; transition: width .3s; }
+.dl-acts { display: flex; gap: 2px; flex: none; opacity: 0; }
+.dl-item:hover .dl-acts, .dl-item:focus-within .dl-acts, .dl-item:not(.done) .dl-acts { opacity: 1; }
+.dl-acts button { width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; border: 0; background: none; color: inherit; }
+.dl-acts button:hover { background: rgba(127, 127, 127, .18); }
+.dl-acts svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dl-empty { padding: 14px 8px; opacity: .6; text-align: center; list-style: none; }
+.dl-all { display: block; width: 100%; margin-top: 4px; padding: 8px; border: 0; border-top: 1px solid rgba(127, 127, 127, .2); border-radius: 0 0 8px 8px; background: none; color: inherit; font: inherit; font-weight: 600; text-align: center; cursor: default; }
+.dl-all:hover, .dl-all:focus-visible { background: var(--sel, rgba(120, 90, 220, .12)); outline: none; }
+/* Pin to Top Bar picker (same drop-down look as Downloads) */
+.pinpop { width: 300px; }
+.pin-item { gap: 10px; padding: 6px 8px; }
+.pin-ic { width: 22px; height: 22px; flex: none; display: grid; place-items: center; opacity: .75; }
+.pin-ic svg, .pin-ck svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.pin-t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin-ck { width: 18px; height: 18px; flex: none; display: grid; place-items: center; }
+.pin-item.on .pin-t { font-weight: 600; }
+.pin-item.on .pin-ic { opacity: 1; }
+.pin-item.off { opacity: .4; }
+.pin-item.off:hover { background: none; }
+.pin-foot { display: flex; align-items: center; gap: 8px; margin-top: 4px; padding: 8px 8px 4px; border-top: 1px solid rgba(127, 127, 127, .2); font-size: 11.5px; }
+.pin-foot span { flex: 1; opacity: .6; }
+.pin-foot button { border: 0; border-radius: 7px; padding: 5px 12px; background: var(--sel, rgba(120, 90, 220, .14)); color: inherit; font: inherit; font-weight: 600; }
+[data-dark="1"] .dlpop { color: #ECEAF8; box-shadow: 0 12px 36px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08) inset; }

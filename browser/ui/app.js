@@ -28,8 +28,10 @@
   let liveTheme = null;      // colours being dragged in the theme picker, before they're saved
 
   // favicon with a letter fallback
+  // (no icon: the first letter of its name, e.g. "Teams" → T; "(3) Inbox" → I)
   function ico(fav, url, title) {
-    const letter = esc((host(url) || title || '?').charAt(0).toUpperCase());
+    const first = s => (String(s || '').match(/[\p{L}\p{N}]/u) || [''])[0];
+    const letter = esc((first(title) || first(host(url)) || '?').toUpperCase());
     if (!fav) return `<span class="ico">${letter}</span>`;
     return `<span class="ico has-img"><img src="${esc(fav)}" alt="" data-letter="${letter}"></span>`;
   }
@@ -94,6 +96,27 @@
     $('nt').hidden = !!a;
     renderFocus(!a);
     if (!a) renderStart();
+    // Lock-menu items pinned to the top bar: one icon button each, highlighted when on.
+    const tools = S.siteTools || [];
+    if (changed('siteTools', tools)) {
+      const box = $('siteTools');
+      box.hidden = !tools.length;
+      box.replaceChildren(...tools.map(t => {
+        const b = document.createElement('button');
+        b.className = 'ib site-tool' + (t.on ? ' on' : '');
+        b.dataset.id = t.id;
+        b.disabled = !t.enabled;
+        b.title = t.tip;
+        b.setAttribute('aria-label', t.tip);
+        if (t.on !== null) b.setAttribute('aria-pressed', String(!!t.on));
+        b.innerHTML = ArchIcons.svg(t.icon);
+        return b;
+      }));
+    }
+    placeSiteTools();
+    // Pop-ups this page tried to open (Chrome's "Pop-ups blocked").
+    $('popBtn').hidden = !a?.popups;
+    if (a?.popups) $('popBtn').title = `${a.popups} pop-up${a.popups === 1 ? '' : 's'} blocked on this page: click to see ${a.popups === 1 ? 'it' : 'them'} or always allow`;
     // Reader mode and translation buttons in the address pill.
     $('readerBtn').hidden = !a || !(a.readerable || a.reading);
     $('readerBtn').classList.toggle('on', !!a?.reading);
@@ -144,10 +167,14 @@
     zp.hidden = !a || z === 100;
     if (!zp.hidden && zp.textContent !== z + '%') zp.textContent = z + '%';
     const d = S.downloads || {};
-    $('dlBtn').hidden = !d.show;
-    $('dlBtn').classList.toggle('busy', d.running > 0);
-    $('dlRing').style.setProperty('--p', d.progress < 0 ? 0.25 : Math.max(0.02, d.progress || 0));
-    $('dlBtn').title = d.running ? `Downloading ${d.running} file${d.running > 1 ? 's' : ''} (Ctrl+J)` : 'Downloads (Ctrl+J)';
+    // Downloads: always in the sidebar's top row (top left, like Arc); the top-bar copy only
+    // when that row isn't shown, and then only while something downloads (like Chrome).
+    for (const b of [$('dlBtn'), $('dlBtnTop')]) {
+      b.classList.toggle('busy', d.running > 0);
+      b.querySelector('.dl-ring').style.setProperty('--p', d.progress < 0 ? 0.25 : Math.max(0.02, d.progress || 0));
+      b.title = d.running ? `Downloading ${d.running} file${d.running > 1 ? 's' : ''} (Ctrl+J)` : 'Downloads (Ctrl+J)';
+    }
+    $('dlBtnTop').hidden = !d.show;
     if (changed('priv', S.private)) {
       document.body.classList.toggle('private', !!S.private);
       $('privateNote').hidden = !S.private;
@@ -1348,10 +1375,70 @@
   new MutationObserver(() => { clearTimeout(labelButtons.t); labelButtons.t = setTimeout(labelButtons, 50); }).observe(document.body, { subtree: true, childList: true });
   labelButtons();
   $('zoomPill').onclick = () => { const r = $('zoomPill').getBoundingClientRect(); act('zoomMenu', r.left, r.bottom + 6); };
-  $('dlBtn').onclick = () => act('library', 'downloads');
+  // Click: the last 3 downloads drop down below the button ("Click to see all" for the rest).
+  for (const b of [$('dlBtn'), $('dlBtnTop')]) b.onclick = () => { const r = b.getBoundingClientRect(); act('dl:menu', Math.round(r.left), Math.round(r.bottom + 6)); };
   $('updBtn').onclick = () => { if (!$('updBtn').classList.contains('busy')) act('update:install'); };
   $('extBtn').onclick = () => act('library', 'extensions');
   $('readerBtn').onclick = () => act('reader');
+  // The pinned tools' box sits exactly halfway between the refresh button and the address
+  // (whichever side refresh is on), and never moves the address itself.
+  const shown = el => !!el && el.offsetParent !== null && el.getBoundingClientRect().width > 0;
+  function placeSiteTools() {
+    const box = $('siteTools');
+    if (box.hidden) return;
+    const bar = $('topbar').getBoundingClientRect();
+    const url = $('urlPill').getBoundingClientRect();
+    const w = box.offsetWidth;
+    const reload = $('reload');
+    const right = shown(reload) && $('tbRight').contains(reload);
+    let x;
+    if (right) {
+      const end = reload.getBoundingClientRect().left;
+      x = Math.min(Math.max((url.right + end) / 2 - w / 2, url.right + 4), end - 4 - w);
+    } else {
+      // Refresh on the left (the usual place); if it's hidden, whatever is last before the address.
+      const before = shown(reload) ? reload : [...$('tbLeft').children, $('showSidebar')].filter(shown).pop();
+      const start = before ? before.getBoundingClientRect().right : bar.left + 6;
+      x = Math.max(Math.min((start + url.left) / 2 - w / 2, url.left - 4 - w), start + 4);
+    }
+    box.style.left = Math.round(x - bar.left) + 'px';
+    box.classList.add('placed');
+  }
+  addEventListener('resize', placeSiteTools);
+  new ResizeObserver(placeSiteTools).observe($('urlPill'));
+  new ResizeObserver(placeSiteTools).observe($('tbLeft'));
+  $('siteTools').addEventListener('click', e => { const b = e.target.closest('.site-tool'); if (!b || b.disabled) return; const r = b.getBoundingClientRect(); act('siteTool', 'run', b.dataset.id, r.left, r.bottom + 6); });
+  $('siteTools').addEventListener('contextmenu', e => { const b = e.target.closest('.site-tool'); if (!b) return; e.preventDefault(); act('siteTool', 'menu', b.dataset.id, e.clientX, e.clientY); });
+  $('popBtn').onclick = () => { const r = $('popBtn').getBoundingClientRect(); act('popups', 'menu', S?.active?.id, { x: r.left, y: r.bottom + 6 }); };
+  // Right-click the address: Paste and go, Copy, Share, Cast.
+  $('urlBtn').oncontextmenu = e => { e.preventDefault(); act('urlMenu', e.clientX, e.clientY); };
+  // Right-click or hold Back / Forward: the list of pages (like Chrome).
+  for (const id of ['back', 'forward']) {
+    const b = $(id);
+    const menu = () => { const r = b.getBoundingClientRect(); act('navMenu', id, r.left, r.bottom + 4); };
+    b.addEventListener('contextmenu', e => { e.preventDefault(); menu(); });
+    let hold = null;
+    b.addEventListener('mousedown', e => { if (e.button === 0) hold = setTimeout(() => { hold = 'shown'; menu(); }, 500); });
+    b.addEventListener('mouseup', () => { if (hold !== 'shown') clearTimeout(hold); });
+    b.addEventListener('mouseleave', () => { if (hold !== 'shown') clearTimeout(hold); hold = null; });
+    b.addEventListener('click', e => { if (hold === 'shown') { e.stopImmediatePropagation(); e.preventDefault(); } hold = null; }, true);
+  }
+
+  // A link, file or text dragged in from another app (or a page) and dropped on the
+  // sidebar or top bar opens in a new tab. (Quasar's own drags use their own handlers.)
+  let ownDrag = false;   // a drag that started inside this window (tabs, links on the start page)
+  document.addEventListener('dragstart', () => { ownDrag = true; }, true);
+  document.addEventListener('dragend', () => { ownDrag = false; }, true);
+  const external = e => { if (ownDrag) return false; const t = [...(e.dataTransfer?.types || [])]; return t.includes('Files') || t.includes('text/uri-list') || t.includes('text/plain'); };
+  document.addEventListener('dragover', e => { if (!e.defaultPrevented && external(e)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } });
+  document.addEventListener('drop', e => {
+    if (e.defaultPrevented || !external(e)) return;
+    e.preventDefault();
+    const dt = e.dataTransfer;
+    const paths = [...(dt.files || [])].map(f => window.arch.pathForFile?.(f)).filter(Boolean);
+    const urls = (dt.getData('text/uri-list') || '').split(/\s+/).map(x => x.trim()).filter(x => x && !x.startsWith('#'));
+    act('dropped', { paths, urls, text: paths.length || urls.length ? '' : dt.getData('text/plain') });
+  });
   $('transBtn').onclick = () => act('translate');
 
   $('shield').onclick = () => { const r = $('siteInfo').getBoundingClientRect(); act('siteInfo', r.left, r.bottom + 6); };

@@ -21,6 +21,28 @@ const SPLIT_GAP = 8;  // space between split-view panes (the focus ring and resi
 
 const uid = () => crypto.randomUUID().replace(/-/g, '').slice(0, 10);
 const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
+// An address without a username or password in it ("https://user:pass@site/" → "https://site/"),
+// so they never end up in history, saved tabs, backups or sync.
+function stripCreds(url) {
+  if (typeof url !== 'string' || !/^[a-z][\w+.-]*:\/\/[^/?#]*@/i.test(url)) return url;
+  try { const u = new URL(url); if (!u.username && !u.password) return url; u.username = ''; u.password = ''; return u.href; } catch { return url; }
+}
+// Copy a password or code: marked so Windows leaves it out of clipboard history and
+// doesn't sync it to other devices, and cleared after a while if it's still there.
+async function copySecret(text, clearAfterMs = 30000) {
+  const { ClipboardItem } = require('electron');
+  const raw = f => `electron application/osclipboard;format="${f}"`;
+  const dword0 = new Blob([new Uint8Array([0, 0, 0, 0])]);
+  try {
+    await clipboard.write([new ClipboardItem({
+      'text/plain': new Blob([String(text)], { type: 'text/plain' }),
+      [raw('ExcludeClipboardContentFromMonitorProcessing')]: new Blob([new Uint8Array([0])]),
+      [raw('CanIncludeInClipboardHistory')]: dword0,
+      [raw('CanUploadToCloudClipboard')]: dword0,
+    })]);
+  } catch { await clipboard.writeText(String(text)); }
+  setTimeout(() => { Promise.resolve(clipboard.readText()).then(t => { if (t === String(text)) clipboard.clear(); }).catch(() => {}); }, clearAfterMs);
+}
 const summarizeCert = c => c ? {
   subject: c.subject?.commonName || c.subjectName || '', org: c.subject?.organizations?.[0] || '',
   issuer: c.issuer?.commonName || c.issuerName || '',
@@ -130,4 +152,4 @@ const PROFILE_KEYS = ['partition', 'pinned', 'favorites', 'history'];
 // Zoom steps, like Chrome's.
 const ZOOMS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
 
-module.exports = { UI, CERT_PAGE, CRASH_PAGE, BLOCK_PAGE, READER_PAGE, FAIL_PAGE, READABILITY, PRELOAD, PAGE_PRELOAD, ICON, TOP, MARGIN, RADIUS, SPLIT_GAP, uid, hostOf, summarizeCert, walkPinned, findPinned, pinnedTabNodes, calculate, copyImage, importPinned, DRIFT_URL, isDriftAddress, pageUrl, toUrl, PROFILE_KEYS, ZOOMS };
+module.exports = { stripCreds, copySecret, UI, CERT_PAGE, CRASH_PAGE, BLOCK_PAGE, READER_PAGE, FAIL_PAGE, READABILITY, PRELOAD, PAGE_PRELOAD, ICON, TOP, MARGIN, RADIUS, SPLIT_GAP, uid, hostOf, summarizeCert, walkPinned, findPinned, pinnedTabNodes, calculate, copyImage, importPinned, DRIFT_URL, isDriftAddress, pageUrl, toUrl, PROFILE_KEYS, ZOOMS };

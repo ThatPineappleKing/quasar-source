@@ -231,8 +231,9 @@ class ToolsPart {
   // ------------------------------------------------------- mouse gestures
   // Hold the right button and draw: ← back, → forward, ↓ new tab, ↓→ close tab,
   // ↑↓ reload, ↑ to the top, ↓↑ … (a plain right-click still opens the menu).
-  onGesture(wc, g) {
-    if (this.st.settings.gestures === false) return;
+  // (Also two-finger touchpad swipes on a page, sent as L/R with swipe: true.)
+  onGesture(wc, g, { swipe = false } = {}) {
+    if (this.st.settings.gestures === false && !swipe) return;
     const tab = this.pageTabs.get(wc.id);
     if (!tab || !this.tabs.has(tab.id)) return;
     this.withWin(this.hostOf(tab.id) || this.cur, () => {

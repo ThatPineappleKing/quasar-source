@@ -6,7 +6,7 @@ const fs = require('fs');
 const { execFile } = require('child_process');
 const { clipboard, dialog, shell: eShell } = require('electron');
 const { originOf, siteKey, generatePassword } = require('../passwords');
-const { uid, hostOf } = require('./common');
+const { uid, hostOf, copySecret } = require('./common');
 
 class AutofillPart {
   // ---------------------------------------------------------- passwords
@@ -91,6 +91,7 @@ class AutofillPart {
   addrCandidate(e, data) {
     const s = this.pwSender(e);
     if (!s || !data || typeof data !== 'object') return;
+    if (this.privateSpaces.has(this.pageTabs.get(e.sender.id)?.spaceId)) return;   // private windows keep nothing
     const f = {};
     for (const k of ['name', 'given', 'family', 'org', 'street', 'line2', 'city', 'region', 'postal', 'country', 'phone', 'email']) {
       if (typeof data[k] === 'string' && data[k].trim()) f[k] = data[k].trim().slice(0, 300);
@@ -118,6 +119,7 @@ class AutofillPart {
     const username = typeof data?.username === 'string' ? data.username.slice(0, 256) : '';
     const password = typeof data?.password === 'string' ? data.password : '';
     if (!s || !password || password.length > 512 || this.vault.isNever(s.profile, s.origin)) return;
+    if (this.privateSpaces.has(this.pageTabs.get(e.sender.id)?.spaceId)) return;   // private windows keep nothing
     const same = this.vault.forSite(s.profile, s.origin).find(x => x.username === username);
     if (same && same.password === password) return;
     const id = uid();
@@ -139,8 +141,9 @@ class AutofillPart {
   }
 
   // Windows Hello (PIN / fingerprint / face) before showing or copying passwords.
-  async verifyUser(reason = 'Quasar wants to show your saved passwords.') {
-    if (Date.now() < this.verifiedUntil) return true;
+  //   fresh: ask now even if Windows Hello said yes in the last few minutes.
+  async verifyUser(reason = 'Quasar wants to show your saved passwords.', { fresh = false } = {}) {
+    if (!fresh && Date.now() < this.verifiedUntil) return true;
     if (process.env.ARCH_USER_DATA && typeof global.__archVerify === 'function') return !!(await global.__archVerify(reason));   // tests only
     const ask = String(reason).replace(/'/g, '’').slice(0, 200);
     const script = [
@@ -152,19 +155,32 @@ class AutofillPart {
       "if ($a -ne 'Available') { Write-Output \"Unavailable:$a\"; exit }",
       `Write-Output (Await ([Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync('${ask}')) ([Windows.Security.Credentials.UI.UserConsentVerificationResult]))`,
     ].join('; ');
-    const out = await new Promise(res => execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script],
+    const out = this._helloResult ? await this._helloResult() : await new Promise(res => execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script],
       { windowsHide: true, timeout: 120000 }, (err, stdout) => res(String(stdout || '').trim())));
     let ok = out === 'Verified';
-    if (!ok && (out.startsWith('Unavailable') || !out)) {
-      const { response } = await dialog.showMessageBox(this.win, {
-        type: 'warning', buttons: ['Continue', 'Cancel'], defaultId: 1, cancelId: 1,
-        message: 'Windows Hello isn’t set up on this PC.',
-        detail: `${reason}\n\nArch normally asks for your Windows PIN or fingerprint first. Set up Windows Hello in Settings › Accounts › Sign-in options for that extra protection.`,
-      });
-      ok = response === 0;
-    }
+    // No Windows Hello on this PC (or it couldn't be asked): the Windows account password
+    // instead, like Chrome. There's no way past without one or the other.
+    if (!ok && (out.startsWith('Unavailable') || !out)) ok = (await this.verifyWindowsPassword(reason)) === 'Verified';
     if (ok) this.verifiedUntil = Date.now() + 5 * 60 * 1000;
     return ok;
+  }
+
+  // The Windows Security sign-in box for the signed-in account (src/win-password.ps1).
+  // The password is checked by Windows inside that PowerShell process and never comes back
+  // here; only "Verified", "Denied", "Cancelled" or "Error" does.
+  async verifyWindowsPassword(reason) {
+    if (this._winPassword) return this._winPassword(reason);   // tests only
+    let parent = 0;
+    try { const h = this.win?.getNativeWindowHandle(); if (h) parent = Number(h.length >= 8 ? h.readBigUInt64LE(0) : h.readUInt32LE(0)); } catch { /* no parent */ }
+    const script = path.join(__dirname, '..', 'win-password.ps1');
+    const out = await new Promise(res => execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', script,
+      '-Message', String(reason).slice(0, 200), '-Parent', String(parent)], { windowsHide: true, timeout: 180000 }, (err, stdout) => res(String(stdout || '').trim().split(/\r?\n/).pop() || 'Error')));
+    if (out === 'Error') {
+      await dialog.showMessageBox(this.win, { type: 'warning', buttons: ['OK'], noLink: true,
+        message: 'Quasar couldn’t check that it’s you.',
+        detail: 'Windows Hello isn’t set up, and the Windows password box couldn’t be shown. Set up Windows Hello in Settings › Accounts › Sign-in options, then try again.' });
+    }
+    return out;
   }
 
   // Passwords open inside the main window's page area, like the Library.
@@ -174,33 +190,63 @@ class AutofillPart {
     this.pwWin = this.openInApp('passwords', 'passwords.html');
   }
 
+  // The Passwords window is locked until Windows Hello says it's you, every time it opens
+  // (a recent "yes" for something else doesn't count). Until then it gets nothing: no
+  // sites, usernames, cards or addresses. The unlock ends when the window closes, or after
+  // 5 minutes without use.
+  pwUnlocked() {
+    const wc = this.pwWin && !this.pwWin.isDestroyed() ? this.pwWin.webContents : null;
+    const ok = !!wc && this._pwUnlock?.wc === wc.id && Date.now() - this._pwUnlock.at < 5 * 60e3;
+    if (ok) this._pwUnlock.at = Date.now();
+    else this._pwUnlock = null;
+    return ok;
+  }
+
+  // The Space (and so the profile) the Passwords window belongs to: the one shown in its window.
+  pwSpace() {
+    const W = this.pwWin?.W && this.wins.has(this.pwWin.W) ? this.pwWin.W : this.cur;
+    return (W && this.spaceById(W.spaceId)) || this.space;
+  }
+  pwProfile() { return this.pwSpace()?.partition || null; }
+
   async pwAct(name, args) {
     const v = this.vault;
+    if (name === 'pwm:close') return this.closeInApp(this.pwWin?.W);
+    if (name === 'pwm:unlock') {
+      const wcId = this.pwWin?.webContents?.id;
+      const ok = await this.verifyUser('Quasar wants to show your saved passwords.', { fresh: true });
+      if (ok && this.pwWin && !this.pwWin.isDestroyed() && this.pwWin.webContents.id === wcId) this._pwUnlock = { wc: wcId, at: Date.now() };
+      return ok;
+    }
+    if (!this.pwUnlocked()) return name === 'pwm:list' ? { locked: true, space: { colors: this.space.colors, grain: this.space.grain } } : { locked: true };
+    // Only this profile's passwords, cards and addresses: the profile of the Space the
+    // Passwords window was opened from. Another profile's items can't be listed, shown,
+    // copied, changed or deleted from here, even by asking for them by id.
+    const mine = this.pwProfile();
+    const own = x => !!x && !!mine && x.profile === mine;
+    const sp = this.pwSpace();
     switch (name) {
-      case 'pwm:close': return this.closeInApp(this.pwWin?.W);
       case 'pwm:list': {
-        // Passwords belong to a Profile (its partition), shared by that Profile's Spaces.
-        const spaces = this.st.profiles.filter(p => this.spacesOnProfile(p.id).length).map(p => {
-          const on = this.spacesOnProfile(p.id).map(s => `${s.emoji || ''} ${s.name}`.trim());
-          return { key: p.partition, name: on.length === 1 && on[0].endsWith(p.name) ? on[0] : `${p.name} (${on.join(', ')})` };
-        });
+        const p = this.st.profiles.find(x => x.partition === mine);
+        const on = p ? this.spacesOnProfile(p.id).map(s => `${s.emoji || ''} ${s.name}`.trim()) : [];
+        const label = sp?.private ? 'This private window' : p ? (on.length === 1 && on[0].endsWith(p.name) ? on[0] : `${p.name}${on.length ? ` (${on.join(', ')})` : ''}`) : 'This Space';
         // Checkup flags (weak / used on other sites) without sending any password to this window.
-        const check = v.checkup();
-        const entries = v.summaries().map(e => ({ ...e, weak: !!check[e.id]?.weak, reused: check[e.id]?.reused || 0, breached: this.breaches?.counts?.[e.id] || 0 }));
-        return { entries, never: v.data.never, spaces, current: this.space.partition, space: { colors: this.space.colors, grain: this.space.grain },
-          verified: Date.now() < this.verifiedUntil, available: v.available, addresses: v.addresses(), cards: v.cards().map(c => v.cardSummary(c)) };
+        const check = v.checkup(mine);
+        const entries = v.summaries().filter(own).map(e => ({ ...e, weak: !!check[e.id]?.weak, reused: check[e.id]?.reused || 0, breached: this.breaches?.counts?.[e.id] || 0 }));
+        return { entries, never: v.data.never.filter(own), spaces: [{ key: mine, name: label }], current: mine, profileName: label, space: { colors: sp?.colors || this.space.colors, grain: sp?.grain ?? this.space.grain },
+          verified: Date.now() < this.verifiedUntil, available: v.available, addresses: v.addresses(mine), cards: v.cards(mine).map(c => v.cardSummary(c)) };
       }
       case 'pwm:saveCard': {
         const c = args[0] || {};
-        const profile = this.st.spaces.some(s => s.partition === c.profile) ? c.profile : this.space.partition;
         const existing = typeof c.id === 'string' && c.id ? v.getCard(c.id) : null;
+        if (existing && !own(existing)) return { error: 'That card isn’t in this profile.' };
         // Editing a card without retyping its number keeps the saved number.
         const number = String(c.number || '').replace(/\D/g, '') || existing?.number || '';
-        try { return { id: v.saveCard(profile, { ...c, number }, existing?.id || null) }; } catch (err) { return { error: err.message }; }
+        try { return { id: v.saveCard(mine, { ...c, number }, existing?.id || null) }; } catch (err) { return { error: err.message }; }
       }
       case 'pwm:deleteCard': {
         const c = v.getCard(String(args[0] || ''));
-        if (!c) return false;
+        if (!own(c)) return false;
         const { response } = await dialog.showMessageBox(this.win, { type: 'warning', buttons: ['Delete', 'Cancel'], defaultId: 1, cancelId: 1, noLink: true,
           message: `Delete the saved card ending in ${c.number.slice(-4)}?` });
         if (response !== 0) return false;
@@ -209,32 +255,34 @@ class AutofillPart {
       }
       case 'pwm:revealCard': {
         const c = v.getCard(String(args[0] || ''));
-        if (!c || !(await this.verifyUser(`Quasar wants to show your card ending in ${c.number.slice(-4)}.`))) return null;
+        if (!own(c) || !(await this.verifyUser(`Quasar wants to show your card ending in ${c.number.slice(-4)}.`))) return null;
         return c.number.replace(/(\d{4})(?=\d)/g, '$1 ');
       }
       case 'pwm:saveAddress': {
         const a = args[0] || {};
-        const profile = this.st.spaces.some(s => s.partition === a.profile) ? a.profile : this.space.partition;
-        return v.saveAddress(profile, a, typeof a.id === 'string' && a.id ? a.id : null);
+        const existing = typeof a.id === 'string' && a.id ? v.getAddress(a.id) : null;
+        if (existing && !own(existing)) return null;
+        return v.saveAddress(mine, a, existing?.id || null);
       }
-      case 'pwm:deleteAddress': v.removeAddress(String(args[0] || '')); return true;
+      case 'pwm:deleteAddress': { const a = v.getAddress(String(args[0] || '')); if (!own(a)) return false; v.removeAddress(a.id); return true; }
       case 'pwm:reveal': {
-        if (!(await this.verifyUser())) return null;
-        return v.get(args[0])?.password ?? null;
+        const e = v.get(args[0]);
+        if (!own(e) || !(await this.verifyUser())) return null;
+        return e.password ?? null;
       }
       case 'pwm:copy': {
-        if (!(await this.verifyUser())) return false;
-        const pw = v.get(args[0])?.password;
+        const e = v.get(args[0]);
+        if (!own(e) || !(await this.verifyUser())) return false;
+        const pw = e.password;
         if (!pw) return false;
-        clipboard.writeText(pw);
-        // Don't leave it on the clipboard. (readText is a promise in newer Electron.)
-        setTimeout(() => { Promise.resolve(clipboard.readText()).then(t => { if (t === pw) clipboard.clear(); }).catch(() => {}); }, 30000);
+        // Not into Windows clipboard history or cloud clipboard; cleared after 30 seconds.
+        await copySecret(pw, 30000);
         return true;
       }
-      case 'pwm:copyUser': { const e = v.get(args[0]); if (e) clipboard.writeText(e.username); return true; }
+      case 'pwm:copyUser': { const e = v.get(args[0]); if (!own(e)) return false; clipboard.writeText(e.username); return true; }
       case 'pwm:delete': {
         const e = v.get(args[0]);
-        if (!e) return false;
+        if (!own(e)) return false;
         const { response } = await dialog.showMessageBox(this.win, {
           type: 'warning', buttons: ['Delete', 'Cancel'], defaultId: 1, cancelId: 1,
           message: `Delete the saved password for ${e.username || '(no username)'} on ${hostOf(e.origin)}?`,
@@ -243,21 +291,23 @@ class AutofillPart {
         v.remove(e.id);
         return true;
       }
-      case 'pwm:removeNever': v.removeNever(args[0], args[1]); return true;
-      case 'pwm:import': return this.importPasswordCsv(String(args[0] || this.space.partition));
-      case 'pwm:export': return this.exportPasswords();
-      case 'pwm:breach': return this.breachCheck();
-      case 'pwm:otpSet': try { v.setOtp(String(args[0] || ''), String(args[1] || '')); return { ok: true }; } catch (err) { return { error: err.message }; }
+      case 'pwm:removeNever': if (!mine) return false; v.removeNever(mine, args[1]); return true;
+      case 'pwm:import': return sp?.private ? null : this.importPasswordCsv(mine);
+      case 'pwm:export': return this.exportPasswords({ profile: mine });
+      case 'pwm:breach': return this.breachCheck(mine);
+      case 'pwm:otpSet': {
+        if (!own(v.get(String(args[0] || '')))) return { error: 'That login isn’t in this profile.' };
+        try { v.setOtp(String(args[0] || ''), String(args[1] || '')); return { ok: true }; } catch (err) { return { error: err.message }; }
+      }
       case 'pwm:otpCode': {
-        if (!(await this.verifyUser('Quasar wants to show an authenticator code.'))) return null;
+        if (!own(v.get(String(args[0] || ''))) || !(await this.verifyUser('Quasar wants to show an authenticator code.'))) return null;
         return v.otpCode(String(args[0] || ''));
       }
       case 'pwm:otpCopy': {
-        if (!(await this.verifyUser('Quasar wants to copy an authenticator code.'))) return false;
+        if (!own(v.get(String(args[0] || ''))) || !(await this.verifyUser('Quasar wants to copy an authenticator code.'))) return false;
         const c = v.otpCode(String(args[0] || ''));
         if (!c) return false;
-        clipboard.writeText(c.code);
-        setTimeout(() => { Promise.resolve(clipboard.readText()).then(t => { if (t === c.code) clipboard.clear(); }).catch(() => {}); }, 60000);
+        await copySecret(c.code, 60000);
         return true;
       }
     }
@@ -279,11 +329,19 @@ class AutofillPart {
       return null;
     }
     const { response } = await dialog.showMessageBox(this.win, {
-      type: 'info', buttons: ['Move file to Recycle Bin', 'Keep file'], defaultId: 0, cancelId: 1,
+      type: 'info', buttons: ['Delete the file now', 'Keep file'], defaultId: 0, cancelId: 1,
       message: `Imported into ${label}: ${res.added} new, ${res.updated} updated, ${res.skipped} skipped.`,
-      detail: `${path.basename(file)} holds your passwords as plain text. It's safest to delete it now (then empty the Recycle Bin).`,
+      detail: `${path.basename(file)} holds your passwords as plain text. It's safest to delete it now: Quasar overwrites it and deletes it (it doesn't go to the Recycle Bin).`,
     });
-    if (response === 0) { try { await eShell.trashItem(file); } catch { /* ignore */ } }
+    // Not just to the Recycle Bin (where it stays readable): overwrite it, then delete it.
+    if (response === 0) {
+      try {
+        const size = fs.statSync(file).size;
+        const fd = fs.openSync(file, 'r+');
+        try { fs.writeSync(fd, Buffer.alloc(Math.max(size, 1), 0), 0, Math.max(size, 1), 0); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+        fs.rmSync(file, { force: true });
+      } catch { try { await eShell.trashItem(file); } catch { /* ignore */ } }
+    }
     return res;
   }
 }

@@ -235,7 +235,10 @@ function privacySignals(gpc, identity) {
   try { if (gpc) Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: function () { return true; }, configurable: true, enumerable: true }); } catch { /* ignore */ }
   if (!identity) return;
   try {
-    if (identity === 'firefox') Object.defineProperty(Navigator.prototype, 'userAgentData', { get: function () { return undefined; }, configurable: true });
+    if (identity === 'firefox') {
+      Object.defineProperty(Navigator.prototype, 'userAgentData', { get: function () { return undefined; }, configurable: true });
+      Object.defineProperty(Navigator.prototype, 'vendor', { get: function () { return ''; }, configurable: true });   // Firefox's
+    }
     else {
       const uad = navigator.userAgentData;
       const brand = identity === 'edge' ? 'Microsoft Edge' : 'Google Chrome';
@@ -883,4 +886,144 @@ if (window === window.top) {
     const b = e.target.closest?.('button, input[type=submit], [role=button]');
     if (b && anyTyped() && (passwordFields().some(p => p.value) || addressFields(b.form || b.closest('form') || document).length >= 3 || cardFields(b.form || b.closest('form') || document).some(f => f.key === 'number' && f.el.value))) capture(b.form || b.closest('form'));
   }, true);
+}
+
+// ---- Two-finger touchpad swipe: back and forward (like Chrome) ----
+// Sideways wheel movement the page can't use (nothing to scroll sideways that way) adds
+// up; far enough, and Quasar goes back (swipe right) or forward (swipe left). An arrow at
+// the page's edge shows how close you are.
+if (window === window.top && adConfig.swipe !== false && /^(https?|file):$/.test(location.protocol)) {
+  let acc = 0, lastAt = 0, cool = 0, arrow = null, endT = null;
+  const canScrollX = (el, dx) => {
+    for (; el && el instanceof Element; el = el.parentElement) {
+      if (el.scrollWidth > el.clientWidth + 1 && /(auto|scroll)/.test(getComputedStyle(el).overflowX)) {
+        if (dx < 0 ? el.scrollLeft > 0 : el.scrollLeft + el.clientWidth < el.scrollWidth - 1) return true;
+      }
+    }
+    const se = document.scrollingElement;
+    return !!se && (dx < 0 ? se.scrollLeft > 0 : se.scrollLeft + se.clientWidth < se.scrollWidth - 1);
+  };
+  const show = (dir, p) => {
+    if (!arrow) {
+      const host = document.createElement('div');
+      host.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483647';
+      const sh = host.attachShadow({ mode: 'closed' });
+      sh.innerHTML = '<style>b{position:fixed;top:50%;width:44px;height:44px;margin-top:-22px;border-radius:50%;background:rgba(20,16,32,.82);color:#fff;font:600 22px/44px "Segoe UI",sans-serif;text-align:center}</style><b></b>';
+      arrow = { host, b: sh.querySelector('b') };
+    }
+    if (!arrow.host.isConnected) (document.body || document.documentElement).appendChild(arrow.host);
+    const b = arrow.b;
+    b.textContent = dir === 'L' ? '←' : '→';
+    b.style.left = dir === 'L' ? `${Math.round(-44 + 56 * p)}px` : '';
+    b.style.right = dir === 'R' ? `${Math.round(-44 + 56 * p)}px` : '';
+    b.style.opacity = String(0.35 + 0.65 * p);
+    b.style.background = p >= 1 ? 'rgba(90,70,200,.92)' : 'rgba(20,16,32,.82)';
+  };
+  const hide = () => { if (arrow?.host.isConnected) arrow.host.remove(); };
+  addEventListener('wheel', e => {
+    const now = Date.now();
+    if (now - lastAt > 300) acc = 0;
+    lastAt = now;
+    if (e.ctrlKey || e.shiftKey || now < cool || e.deltaX === 0 || Math.abs(e.deltaX) <= Math.abs(e.deltaY) * 1.5) { if (!acc) hide(); return; }
+    if (canScrollX(e.target, e.deltaX)) { acc = 0; hide(); return; }
+    acc += e.deltaX;
+    const dir = acc < 0 ? 'L' : 'R';
+    show(dir, Math.min(1, Math.abs(acc) / 260));
+    clearTimeout(endT);
+    // The fingers lift: go if it was far enough.
+    endT = setTimeout(() => {
+      if (Math.abs(acc) >= 260) { try { ipcRenderer.send('arch:swipe', dir); } catch { /* ignore */ } cool = Date.now() + 700; }
+      acc = 0; hide();
+    }, 160);
+  }, { capture: true, passive: true });
+}
+
+// ---- Text selection quick menu (like Opera): Copy, Search, Translate, and a conversion ----
+if (window === window.top && adConfig.quickMenu !== false && /^(https?|file):$/.test(location.protocol)) {
+  let box = null, shadow = null, curText = '';
+  const close = () => { if (box?.isConnected) box.remove(); curText = ''; };
+  const make = () => {
+    box = document.createElement('div');
+    box.style.cssText = 'position:absolute;z-index:2147483647;top:0;left:0';
+    shadow = box.attachShadow({ mode: 'closed' });
+    shadow.innerHTML = `<style>
+      .q{display:flex;gap:2px;padding:3px;border-radius:9px;background:rgba(28,24,40,.94);box-shadow:0 4px 18px rgba(0,0,0,.28);font:500 12px "Segoe UI",sans-serif}
+      button{all:unset;cursor:pointer;color:#fff;padding:5px 9px;border-radius:6px;white-space:nowrap}
+      button:hover{background:rgba(255,255,255,.14)}
+      .cv{color:#c9b8ff;font-weight:600}</style><div class="q"></div>`;
+    const q = shadow.querySelector('.q');
+    q.addEventListener('mousedown', e => e.preventDefault());   // keep the selection
+    q.addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.op === 'cv') { try { ipcRenderer.send('arch:quick', 'copy', b.dataset.v); } catch { /* ignore */ } b.textContent = 'Copied'; setTimeout(close, 600); return; }
+      try { ipcRenderer.send('arch:quick', b.dataset.op, curText); } catch { /* ignore */ }
+      close();
+    });
+  };
+  const editable = n => { const el = n?.nodeType === 1 ? n : n?.parentElement; return !!el?.closest?.('input, textarea, [contenteditable=""], [contenteditable="true"]'); };
+  document.addEventListener('mouseup', e => {
+    if (e.button !== 0 || (box && e.composedPath().includes(box))) return;
+    setTimeout(() => {
+      const sel = getSelection();
+      const text = String(sel || '').trim();
+      if (!text || text.length > 1000 || sel.rangeCount === 0 || editable(sel.anchorNode)) return close();
+      const r = sel.getRangeAt(0).getBoundingClientRect();
+      if (!r.width && !r.height) return close();
+      if (!box) make();
+      curText = text;
+      const q = shadow.querySelector('.q');
+      const isUrl = !/\s/.test(text) && /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(text);
+      q.innerHTML = '<button data-op="copy">Copy</button><button data-op="search">Search</button>' +
+        (isUrl ? '<button data-op="go">Open</button>' : '') + '<button data-op="translate">Translate</button>';
+      (document.body || document.documentElement).appendChild(box);
+      box.style.left = `${Math.max(4, scrollX + r.left + r.width / 2 - 110)}px`;
+      box.style.top = `${scrollY + (r.top > 48 ? r.top - 40 : r.bottom + 8)}px`;
+      if (text.length <= 40 && /\d/.test(text)) {
+        ipcRenderer.invoke('arch:quick-convert', text).then(v => {
+          if (!v || curText !== text) return;
+          const b = document.createElement('button');
+          b.className = 'cv'; b.dataset.op = 'cv'; b.dataset.v = v; b.textContent = `≈ ${v}`; b.title = 'Copy';
+          q.prepend(b);
+        }).catch(() => {});
+      }
+    }, 10);
+  }, true);
+  document.addEventListener('mousedown', e => { if (box && !e.composedPath().includes(box)) close(); }, true);
+  document.addEventListener('keydown', close, true);
+  addEventListener('scroll', () => { if (curText) close(); }, { capture: true, passive: true });
+}
+
+// ---- Sites offering to open email links (navigator.registerProtocolHandler) ----
+// Electron ignores the call, so it's passed on to Quasar, which asks you. Also: a page
+// asking for Widevine (Netflix, Disney+…) on an engine without it gets a clear notice.
+function pageHooks() {
+  if (window.__archHooks) return;
+  Object.defineProperty(window, '__archHooks', { value: true });
+  const say = (type, detail) => { try { document.dispatchEvent(new CustomEvent(type, { detail })); } catch (e) { /* ignore */ } };
+  const native = (fn, orig) => { try { Object.defineProperty(fn, 'toString', { value: () => orig.toString() }); } catch (e) { /* ignore */ } return fn; };
+  const N = Navigator.prototype;
+  const reg = N.registerProtocolHandler;
+  if (reg) {
+    N.registerProtocolHandler = native(function (scheme, url) {
+      try { say('__arch-proto', JSON.stringify([String(scheme), new URL(String(url).replace('%s', '__ARCH_S__'), location.href).href.replace('__ARCH_S__', '%s')])); } catch (e) { /* bad address */ }
+      try { return reg.apply(this, arguments); } catch (e) { return undefined; }
+    }, reg);
+  }
+  const rmksa = N.requestMediaKeySystemAccess;
+  if (rmksa) {
+    N.requestMediaKeySystemAccess = native(function (keySystem) {
+      const p = rmksa.apply(this, arguments);
+      if (/widevine/i.test(String(keySystem))) p.catch(() => say('__arch-drm', '1'));
+      return p;
+    }, rmksa);
+  }
+}
+if (window === window.top && /^https?:$/.test(location.protocol)) {
+  try { webFrame.executeJavaScript(`(${pageHooks.toString()})()`); } catch { /* ignore */ }
+  document.addEventListener('__arch-proto', e => {
+    try { const [scheme, url] = JSON.parse(String(e.detail)); ipcRenderer.send('arch:protocol-handler', String(scheme).slice(0, 40), String(url).slice(0, 2000)); } catch { /* ignore */ }
+  });
+  let drmSent = false;
+  document.addEventListener('__arch-drm', () => { if (!drmSent) { drmSent = true; try { ipcRenderer.send('arch:drm'); } catch { /* ignore */ } } });
 }

@@ -155,6 +155,48 @@ class DownloadsPart {
     if (save) this.persist();
     this.push();
     this.libUpdate();
+    // The downloads drop-down, if it's open, follows along (progress, finished, removed).
+    clearTimeout(this._dlMenuT);
+    this._dlMenuT = setTimeout(() => {
+      for (const W of this.wins) if (W.overlayMode === 'downloads' && W.overlay && !W.overlay.webContents.isDestroyed()) this.withWin(W, () => this.dlMenuData().then(d => W.overlay.webContents.send('dl:list', d)));
+    }, 150);
+  }
+
+  // ---------------------------------------------- the downloads drop-down
+  // The button at the top left of the sidebar: the last 3 downloads, and "Click to see
+  // all" (the Library) when there are more. Like Arc's and Chrome's.
+  dlVisible() {
+    const sp = this.space;
+    return this.st.downloads.filter(d => sp.private ? d.spaceId === sp.id : !d.private);
+  }
+
+  async dlMenuData() {
+    const list = this.dlVisible();
+    this._dlIcons ||= new Map();
+    const items = await Promise.all(list.slice(0, 3).map(async d => {
+      const exists = d.state === 'completed' ? fs.existsSync(d.path) : true;
+      let icon = this._dlIcons.get(path.extname(d.path || '').toLowerCase());
+      if (icon === undefined && d.path) {
+        try { const img = await app.getFileIcon(fs.existsSync(d.path) ? d.path : (d.path + '.archpart'), { size: 'normal' }); icon = img.isEmpty() ? '' : img.toDataURL(); } catch { icon = ''; }
+        if (fs.existsSync(d.path)) this._dlIcons.set(path.extname(d.path).toLowerCase(), icon);
+      }
+      const live = this.liveDownloads.get(d.id);
+      return { id: d.id, name: d.filename, state: d.state, paused: !!d.paused, received: d.received || 0, total: d.total || 0, exists, icon: icon || '',
+        host: (() => { try { return new URL(d.url).hostname.replace(/^www./, ''); } catch { return ''; } })(), end: d.end || 0,
+        canResume: !!live?.canResume() || this.canResumeLater(d), screenshot: !!d.screenshot };
+    }));
+    return { items, more: Math.max(0, list.length - 3), total: list.length };
+  }
+
+  async openDownloadsMenu(x, y) {
+    const data = await this.dlMenuData();
+    this.openCommand('downloads', '', { dl: { ...data, x, y } });
+  }
+
+  dlMenuAct(op, id) {
+    if (op === 'all') { this.closeCommand(); return this.openLibrary('downloads'); }
+    if (op === 'open' || op === 'show') this.closeCommand();
+    return this.downloadAct(op, id);
   }
 
   downloadAct(op, id) {

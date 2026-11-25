@@ -1,6 +1,6 @@
 # Quasar
 
-**Version 1.3.0** · *(Formerly called Arch.)*
+**Version 1.7.1** · *(Formerly called Arch.)*
 
 An Arc-style browser built on Electron (the Chromium engine). Unlike the Chrome
 extension, it controls the whole window, so it can look like Arc: no title bar,
@@ -31,13 +31,18 @@ npm start
 | Open a page / search | **Ctrl+T** opens the command bar, which searches this Space's tabs, pinned tabs, Favorites, history and actions |
 | Edit the current URL | **Ctrl+L**, or click the address pill at the top |
 | Find in page | **Ctrl+F** |
-| Switch Space | Icons at the bottom of the sidebar, **Ctrl+1–9**, or a two-finger sideways swipe |
+| Switch Space | Icons at the bottom of the sidebar, **Ctrl+1–9**, or a two-finger sideways swipe on the sidebar. Prefer Chrome's Ctrl+1–8 for tabs (Ctrl+9 = last tab)? Settings › General › Ctrl+1 to Ctrl+9 |
 | Edit a Space | Pencil next to the Space name: icon, name, 1–3 gradient colours, grain, presets |
 | Pin a tab to the Space | **Ctrl+D**, the pin button, or drag it above the line |
 | Favorite (this Space) | Star button or drag to the top grid (up to 12 per Space). Right-click a favorite to remove it |
 | Move a tab to another Space | Drag it onto that Space's icon, or right-click › Move to Space. Between Spaces on the same Profile it moves as it is (still signed in); to a Space on another Profile it reopens fresh there |
-| Switch tabs | **Ctrl+Tab** goes to the tab you used last (hold Ctrl and press Tab again to go further back); Settings can make it follow the sidebar order instead. **Ctrl+Alt+↑/↓** always follow the sidebar |
-| Close several tabs | Right-click a tab › Close Other Tabs / Close Tabs Below; right-click a folder (or a pinned tab in one) › Close Tabs in Folder |
+| Switch tabs | **Ctrl+Tab** goes to the tab you used last (hold Ctrl and press Tab again to go further back, with pictures of the tabs, like Opera); Settings can make it follow the sidebar order instead. **Ctrl+Alt+↑/↓** always follow the sidebar |
+| Close several tabs | Right-click a tab › Close Other Tabs / Close Tabs Below; right-click a folder (or a pinned tab in one) › Close Tabs in Folder. **Undo** in the message (or Ctrl+Shift+T) brings the whole batch back |
+| Back / Forward lists | Right-click or hold the Back or Forward button for the pages before or after this one |
+| Paste and go | Right-click the address (or the command bar's text box) › Paste and Go / Paste and Search |
+| Open a link or file | Drag it onto the sidebar or top bar (links, images, PDFs, saved `.html` files) |
+| Clear browsing data | **Ctrl+Shift+Delete** |
+| Reopen a closed window | Right-click a tab › Reopen Closed Window, or the command bar |
 | All shortcuts | **Ctrl+/** shows them; change any of them in Library › Keyboard shortcuts |
 | Hide the sidebar | **Ctrl+S** |
 | Little Quasar window | **Ctrl+Alt+N**, the window icon, or right-click a link. "Open in Quasar" moves the page into the main window |
@@ -165,8 +170,29 @@ sign in somewhere new, the sidebar asks **Save / Never**.
 
 **Security:**
 - Stored in `%APPDATA%\Quasar\passwords.bin`, encrypted with your Windows account (DPAPI).
-- Showing or copying a password asks for Windows Hello (PIN or fingerprint), and stays
-  unlocked for 5 minutes.
+- The Passwords window is locked until Windows Hello (PIN, fingerprint or face) confirms
+  it's you, every time it opens, even if you used Windows Hello a minute ago. Until then it
+  shows nothing, not even which sites you have logins for. It locks again when you close it,
+  or after 5 minutes without use.
+- On a PC without Windows Hello, Quasar asks for your Windows account password instead
+  (the standard Windows Security sign-in box, as Chrome does). Windows checks it, and it has
+  to be the password of the account you're signed in as; Quasar never sees it. There's no
+  way past without Windows Hello or that password.
+- Copied passwords and authenticator codes are marked so Windows leaves them out of
+  clipboard history (Win+V) and doesn't sync them to your other devices.
+- Private windows never offer to save passwords or addresses.
+- An address with a username and password in it (`https://user:pass@site/`) is used to sign
+  in but never kept: not in the tab, history, saved tabs, backups or sync.
+- After importing a password CSV, "Delete the file now" overwrites it and deletes it (it
+  doesn't go to the Recycle Bin, where it would stay readable).
+- Deleting a Space's profile deletes its saved passwords, cards and addresses.
+- Each profile's passwords, cards and addresses stay with that profile. The Passwords
+  window shows only the profile of the Space you open it from; another profile's items
+  can't be seen, copied, changed, deleted or exported from there. Open Passwords from a
+  Space on the other profile to manage those. The checkup and breach check look at one
+  profile at a time.
+- The eye shows a password (or card number) only while you hold it down, with the mouse
+  or by holding Space; let go and it's hidden again.
 - Copied passwords are wiped from the clipboard after 30 seconds.
 - Quasar's sidebar never receives passwords or authenticator keys. Only the page you're
   signing in to does, after you pick an account (and only the current code, not the key).
@@ -181,6 +207,53 @@ sign in somewhere new, the sidebar asks **Save / Never**.
 - **Continue where you left off** (Settings › Tabs): open tabs stay when Quasar closes and
   come back next time (asleep until you click them; split views too) until auto-archive
   takes them. Off by default, in which case open tabs close and go to the Archive.
+  Either way, if Quasar crashes, or closes because Windows restarts or Quasar updates,
+  your tabs come back (asleep) the next time, like Chrome's "Restore pages?". After a crash
+  a message says so, with **Close them** if you'd rather not have them.
+- **Pop-up blocker:** windows and tabs a page opens without you clicking first are blocked.
+  The address bar shows a pop-up icon: click it to open one, or **Always allow pop-ups and
+  redirects** from that site (sign-in and payment pages). Site info (the icon left of the
+  address) › Site settings also has **Sound** (mute a site for good) and **Automatic
+  downloads** (a site downloading several files at once has to ask).
+- **Pin site tools to the top bar:** click the lock (site info) left of the address ›
+  **Pin to Top Bar…**. A drop-down lists every item in that menu (Forget this site, Forget
+  when I close it, Never sleep, Mute this site, ad blocking, pop-ups, automatic downloads,
+  "I'm using Chrome", reset zoom, reset permissions, Boost, Always open in a Space, All site
+  settings); click as many as you like (it stays open; Esc or Done closes it). Up to 6 can be
+  pinned. They show as one-click icons in their own rounded box, halfway between the refresh
+  button and the address (the address doesn't move). Switches are highlighted when on; hover
+  for what each does; right-click one to move it, unpin it, or open the list again.
+- **Links to other apps** (email `mailto:`, Teams, Zoom, `tel:`…): Quasar asks before opening
+  the app, with "Always allow" for that site. Email links can open in **Gmail, Outlook.com or
+  Yahoo Mail** instead (Settings › General › Email links), and when Gmail or Outlook offers
+  to handle email links, Quasar asks you.
+- **Notification requests:** Settings › Privacy › Notification requests: ask each time, a
+  quieter notice you can ignore, or don't let sites ask at all.
+- **Autoplay:** Settings › Pages › Autoplay can stop videos playing with sound until you click.
+  **Video speed:** right-click a page with a video › Video Speed (0.5×–3×), or the command bar
+  ("video faster"). **Media keys** on your keyboard control the tab that's playing (through
+  Windows' media controls).
+- **Touchpad:** a two-finger sideways swipe on a page goes back or forward (an arrow at the
+  edge shows when you've swiped far enough); on the sidebar it switches Space.
+- **Quick menu for selected text** (like Opera): Copy, Search, Translate, and when the text
+  is a price or measurement, the converted value ("$40" ≈ €37, "5 miles" ≈ 8 km). Settings ›
+  General turns it off.
+- **Share and Cast:** right-click a page (or the address) › **Share…** opens Windows' share
+  panel (Nearby Share, Mail, Phone Link…). **Cast…** opens Windows' Cast panel (Win+K) for
+  Miracast TVs and wireless displays. Chromecast / Google TV casting isn't available:
+  Electron, which Quasar is built on, can't talk to Chromecasts.
+- **Network limit** (Settings › Performance, like Opera GX): caps how fast Quasar downloads
+  and uploads so games and calls on the same connection stay smooth.
+- **Delete cookies and site data when Quasar closes** (Settings › Privacy): you start signed
+  out every time; passwords, history and pinned tabs are kept.
+- **Streaming sites (Netflix, Disney+, Prime Video, Max, Hulu, Spotify's web player):** these
+  need Widevine, Google's copy protection, which the standard Electron engine doesn't
+  include, so their videos won't play and Quasar says so when a site asks for it. Use
+  their Windows apps, or another browser, for now. (Quasar is ready for castlabs' Electron,
+  which includes Widevine; switching the engine to it is a build change, and Netflix in HD
+  also needs the app signed through castlabs' service.)
+- **Your phone:** there's no Quasar phone app, so tabs, passwords and bookmarks don't reach
+  your phone. To open a page there, right-click it › QR Code for This Page.
 - **Pinned tab moved on:** when a pinned tab has gone to another page, the sidebar shows
   "Pinned title / page now" with a ↺ button that takes it back to its pinned address.
   Right-click › Make This Page the Pinned Address keeps the new page instead.
@@ -219,9 +292,12 @@ sign in somewhere new, the sidebar asks **Save / Never**.
   refuse sign-in in browsers it doesn't recognise. Quasar identifies itself the same way
   Chrome does, but this can still happen, especially on a new profile. If it does, try the
   padlock › Tell This Site I'm Using › Google Chrome (or Edge) on that site.
-- **Downloads** go to your Downloads folder. While something downloads (and for a minute
-  after), a download button with a progress ring sits next to the address; it opens
-  Library › Downloads (Ctrl+J), where you can pause, resume, open or show each file.
+- **Downloads** go to your Downloads folder. The download button sits at the top left of
+  the sidebar (like Arc), with a progress ring while something downloads. Click it for a
+  drop-down of your last 3 downloads: click one to open it, or use its buttons to show it
+  in its folder, pause, resume, cancel or retry. With more than 3, **Click to see all**
+  below them opens Library › Downloads (also Ctrl+J). When the sidebar is on the right,
+  on top or hidden, the button appears next to the address instead, while downloading.
   PDFs open in Quasar's built-in PDF viewer instead of downloading.
 - **Site permissions** (camera, microphone, location, notifications) are asked once per
   site, separately in each Space, and remembered after restarting. Change them from the
@@ -591,7 +667,8 @@ sign in somewhere new, the sidebar asks **Save / Never**.
   this PC: up to 4,000 characters per page are kept in `%APPDATA%\Quasar\history-text`;
   turning it off or clearing history deletes them.
 
-Quasar has no AI features and needs no API keys.
+Quasar has no AI features (no assistant like Opera's Aria or Chrome's Gemini), on purpose,
+and needs no API keys.
 
 ## Files
 
@@ -603,6 +680,8 @@ Quasar has no AI features and needs no API keys.
 | `src/shell/tools.js`, `collections.js`, `workspace.js`, `apps.js`, `pagetext.js` | Zap, site dark mode, text from images, QR, gestures · Live Folders, notes, Read Later · compact mode, panels, tidy, break, battery saver · site apps · page text (for reading aloud) and history search by page text |
 | `src/shell/migrate.js`, `privacy.js`, `everyday.js`, `power.js` | Importing from other browsers, bookmarks files, password export · breach check, forget on close, Windows Hello locks, authenticator codes, browser identity per site · search shortcuts, highlight links, read aloud, live captions, unread counts, find in all tabs · task manager and memory limit, command chains, sleeping per Space, folders for today's tabs, screenshot mark-up, offline videos |
 | `src/shell/vpn.js` | The free VPN: sets up Cloudflare WARP's local proxy and routes a profile through it |
+| `src/shell/habits.js`, `ui/switcher.*`, `src/win-share.ps1` | Chrome and Opera habits: pop-up blocker, crash restore, Back/Forward lists, Paste and go, dropped links and files, email links, site sound / pop-ups / automatic downloads, quieter notification prompts, video speed, cast and share, the Ctrl+Tab switcher, network limit, selection quick menu, reopening closed windows and tab batches, clearing site data on exit |
+| `src/shell/sitetools.js` | Site-info (lock menu) items pinned to the top bar as one-click buttons |
 | `src/shell/omnibox.js` | The command bar as an address bar: completing addresses as you type, and search suggestions |
 | `src/browser-import.js`, `src/totp.js` | Reading other browsers' bookmarks and history, bookmarks HTML files · authenticator codes |
 | `ui/taskmgr.*`, `ui/markup.*` | The task manager and screenshot mark-up windows |

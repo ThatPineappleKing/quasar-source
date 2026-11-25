@@ -60,12 +60,17 @@ const SHORTCUTS = [
   { id: 'mute', group: 'Sound and video', label: 'Mute / unmute tab', keys: [] },
   { id: 'play-pause', group: 'Sound and video', label: 'Play / pause what’s playing', keys: [] },
   { id: 'media-next', group: 'Sound and video', label: 'Next track', keys: [] },
+  { id: 'speed-up', group: 'Sound and video', label: 'Video faster (1.25×, 1.5×, 2×…)', keys: [] },
+  { id: 'speed-down', group: 'Sound and video', label: 'Video slower', keys: [] },
+  { id: 'speed-normal', group: 'Sound and video', label: 'Video at normal speed', keys: [] },
   // Library
   { id: 'history', group: 'Library', label: 'History', keys: ['Ctrl+H'] },
   { id: 'downloads', group: 'Library', label: 'Downloads', keys: ['Ctrl+J'] },
   { id: 'passwords', group: 'Library', label: 'Passwords', keys: [] },
   { id: 'extensions', group: 'Library', label: 'Extensions', keys: [] },
   { id: 'sleep-others', group: 'Library', label: 'Put background tabs to sleep', keys: [] },
+  { id: 'clear-data', group: 'Library', label: 'Clear browsing data', keys: ['Ctrl+Shift+Delete'] },
+  { id: 'reopen-window', group: 'Tabs and windows', label: 'Reopen closed window', keys: [] },
 ];
 
 const CODE_KEYS = {
@@ -111,7 +116,7 @@ function normalizeCombo(s) {
 // Combinations Quasar won't take over (text editing and the fixed keys).
 function reservedCombo(k) {
   if (/^(Ctrl\+)?(C|V|X|A|Z|Y)$/.test(k) && k.startsWith('Ctrl+')) return `${k} is used for copy, paste and editing text.`;
-  if (/^Ctrl\+[1-9]$/.test(k)) return `${k} switches Spaces.`;
+  if (/^Ctrl\+[1-9]$/.test(k)) return `${k} switches Spaces or tabs (Settings › General).`;
   if (k === 'Esc') return 'Esc is used to close things.';
   if (!/^(Ctrl|Alt)\+/.test(k) && !/^(Shift\+)?F\d{1,2}$/.test(k)) return 'Use Ctrl or Alt with the key (or an F-key), so typing on pages still works.';
   return null;

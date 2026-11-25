@@ -7,6 +7,56 @@ const { app } = require('electron');
 
 const NOTES = {
   // `items` can also hold { section, items } groups, shown under their own heading.
+  '1.7.1': {
+    title: 'What’s new in Quasar 1.7.1',
+    items: [
+      { section: 'Top bar', items: [
+        'Pin site tools to the top bar: click the lock left of the address › Pin to Top Bar…, and tick up to 6 tools (Forget this site, Never sleep, Mute this site, ad blocking, pop-ups, reset zoom, Boost and more). They become one-click buttons; switches light up when on. Right-click one to move or unpin it.',
+        'Right-click the address for Paste and Go, Edit Address, Copy Address (Ctrl+Shift+C), Share, Cast and a QR code.',
+        'Back and Forward lists: right-click or hold Back or Forward to jump to any earlier or later page.',
+      ] },
+      { section: 'Fixes', items: [
+        'Google sign-in works again. Google’s sign-in page refused Quasar; now only that page sees Quasar as Firefox. Gmail, YouTube and the rest of Google are unchanged.',
+        'Copying the site address works again, from the address’s right-click menu or Ctrl+Shift+C.',
+      ] },
+      { section: 'Tabs and windows', items: [
+        'Ctrl+Tab switcher with pictures: Ctrl+Tab goes to the tab you used last. Keep holding Ctrl and press Tab again to go further back, with a preview of each tab.',
+        'Close several tabs at once: right-click a tab › Close Other Tabs or Close Tabs Below, or close every tab in a folder. Undo brings the whole batch back.',
+        'Reopen a closed window from a tab’s right-click menu or the command bar.',
+        'Your tabs come back after a crash or a Windows restart.',
+        'Drag links and files onto Quasar to open them: links, images, PDFs and saved web pages.',
+        'Swipe with two fingers on a page to go back or forward, or on the sidebar to switch Space.',
+        'Pinned tabs and Favorites show their site icons even before you open them, offline and after a restart.',
+      ] },
+      { section: 'Sharing, media and sites', items: [
+        'Share a page through Windows’ share panel (Nearby Share, Mail, Phone Link and others).',
+        'Cast to a Miracast TV or wireless display.',
+        'Pop-up blocker: pop-ups a page opens without a click are blocked. Click the icon in the address bar to allow one, or always allow them for that site.',
+        'Per-site settings for sound and automatic downloads.',
+        'Quick menu for selected text: Copy, Search and Translate. Prices and measurements also show a converted value (“$40” ≈ €37).',
+        'Video speed from 0.5× to 3×, from the page’s right-click menu.',
+        'An Autoplay setting stops videos playing with sound until you click.',
+        'Media keys on your keyboard control the tab that’s playing.',
+        'Links to other apps (email, Teams, Zoom…) ask before opening. Email links can open in Gmail, Outlook.com or Yahoo Mail instead.',
+      ] },
+      { section: 'Downloads', items: [
+        'The download button now sits at the top left of the sidebar, like Arc, with a progress ring. Click it for your last 3 downloads, with buttons to open, show in folder, pause or retry.',
+      ] },
+      { section: 'Privacy and passwords', items: [
+        'On a PC without Windows Hello, Quasar asks for your Windows password before showing saved passwords. Windows checks it; Quasar never sees it.',
+        'Copied passwords and codes stay out of clipboard history (Win+V) and aren’t synced to your other devices.',
+        'Each profile’s passwords stay with that profile: you see and manage them only from a Space on that profile.',
+        'The eye shows a password only while you hold it down.',
+        'Private windows never offer to save passwords or addresses.',
+        'A username and password inside an address (user:pass@site) are used to sign in but never saved.',
+        'New option to delete cookies and site data when Quasar closes (Settings › Privacy).',
+        'Quieter notification requests: be asked each time, see a small notice, or never be asked.',
+      ] },
+      { section: 'Performance', items: [
+        'Network limit (Settings › Performance) caps Quasar’s download and upload speed so games and calls stay smooth.',
+      ] },
+    ],
+  },
   '1.6.1': {
     title: 'What’s new in Quasar 1.6.1',
     items: [

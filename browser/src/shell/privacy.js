@@ -9,15 +9,19 @@ const { hostOf } = require('./common');
 const { siteOf } = require('../protection');
 const { siteKey } = require('../passwords');
 
+// Sites that only work when told Quasar is another browser (see identityFor).
+const BUILT_IN_IDENTITY = { 'accounts.google.com': 'firefox' };
+
 class PrivacyPart {
   // ---------------------------------------------------- breached passwords
   // Have I Been Pwned's "range" lookup: only the first 5 characters of each password's
   // SHA-1 hash leave this PC; the answer lists every leaked hash starting with them,
   // and the match is made here. Padding hides how many results came back.
-  async breachCheck() {
+  async breachCheck(profile = this.space.partition) {
     const v = this.vault;
     const byHash = new Map();
-    for (const e of v.data.entries) {
+    const list = v.data.entries.filter(e => e.profile === profile);
+    for (const e of list) {
       const h = crypto.createHash('sha1').update(e.password, 'utf8').digest('hex').toUpperCase();
       (byHash.get(h) || byHash.set(h, []).get(h)).push(e.id);
     }
@@ -36,7 +40,7 @@ class PrivacyPart {
       }
     }
     this.breaches = { at: Date.now(), counts };
-    return { checked: v.data.entries.length, breached: Object.keys(counts).length, counts, failed };
+    return { checked: list.length, breached: Object.keys(counts).length, counts, failed };
   }
 
   // ------------------------------------------------ forget when closed (Brave)
@@ -158,7 +162,18 @@ class PrivacyPart {
   // ------------------------------------------------- browser identity per site
   // Some sites refuse browsers they don't know. Quasar can tell one site it's Chrome,
   // Edge or Firefox (in the request headers and to the page's scripts).
-  identityFor(host) { const s = siteOf(String(host || '').toLowerCase()); return (s && this.st.siteIdentity?.[s]) || null; }
+  //
+  // Built in: Google's sign-in page (accounts.google.com) refuses browsers built on embedded
+  // Chromium like Quasar ("Couldn't sign you in — this browser or app may not be secure"),
+  // so it's told Quasar is Firefox, which Google accepts. Only that page: Gmail, YouTube and
+  // the rest of Google see Quasar as usual. Choosing an identity for google.com overrides it.
+  identityFor(host) {
+    host = String(host || '').toLowerCase();
+    const s = siteOf(host);
+    const own = s && this.st.siteIdentity?.[s];
+    if (own) return own;
+    return BUILT_IN_IDENTITY[host] && this.st.settings.googleSignInFix !== false ? BUILT_IN_IDENTITY[host] : null;
+  }
 
   setIdentity(host, kind) {
     const s = siteOf(String(host || '').toLowerCase().replace(/^www\./, ''));

@@ -155,11 +155,13 @@ class Vault {
   cardSummary(c) { return { id: c.id, profile: c.profile, brand: cardBrand(c.number), last4: c.number.slice(-4), month: c.month, year: c.year, name: c.name, nickname: c.nickname }; }
 
   // Password checkup: which saved passwords are weak or used on more than one site.
-  checkup() {
+  // (one profile's passwords, compared only with each other)
+  checkup(profile = null) {
+    const list = this.data.entries.filter(e => !profile || e.profile === profile);
     const byPw = new Map();
-    for (const e of this.data.entries) { const k = e.password; byPw.set(k, (byPw.get(k) || new Set()).add(siteKey(e.origin))); }
+    for (const e of list) { const k = e.password; byPw.set(k, (byPw.get(k) || new Set()).add(siteKey(e.origin))); }
     const out = {};
-    for (const e of this.data.entries) out[e.id] = { weak: strength(e.password) <= 1, reused: (byPw.get(e.password)?.size || 1) - 1 };
+    for (const e of list) out[e.id] = { weak: strength(e.password) <= 1, reused: (byPw.get(e.password)?.size || 1) - 1 };
     return out;
   }
 

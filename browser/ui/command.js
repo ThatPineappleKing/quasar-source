@@ -7,7 +7,7 @@
   const q = $('q');
   let mode = 'new', items = [], sel = 0, token = 0;
 
-  window.arch.on('command:open', ({ mode: m, text, space, ui, card, keys, tour, qr, brk, lock, whatsNew, define }) => {
+  window.arch.on('command:open', ({ mode: m, text, space, ui, card, keys, tour, qr, brk, lock, whatsNew, define, dl, pins }) => {
     if (ui) ArchTheme.ui(document.documentElement, ui);
     mode = m;
     // Where the page area is, so the bar sits in the middle of it rather than of the window.
@@ -20,6 +20,9 @@
     const find = mode === 'find';
     const sheet = ['keys', 'tour', 'qr', 'break', 'lock', 'whatsnew', 'define'].includes(mode);
     document.body.classList.toggle('find-mode', find);
+    document.body.classList.toggle('dl-mode', mode === 'downloads' || mode === 'pins');
+    $('dlpop').hidden = mode !== 'downloads';
+    $('pinpop').hidden = mode !== 'pins';
     document.body.classList.toggle('break-mode', mode === 'break' || mode === 'lock');
     $('bar').hidden = find || sheet;
     $('find').hidden = !find;
@@ -32,6 +35,8 @@
     if (mode === 'break') return showBreak(brk || {});
     if (mode === 'lock') return showLock(lock || {});
     if (mode === 'define') return showDefine(define || {});
+    if (mode === 'downloads') { $('bar').hidden = $('find').hidden = $('sheet').hidden = true; return showDownloads(dl || {}, true); }
+    if (mode === 'pins') { $('bar').hidden = $('find').hidden = $('sheet').hidden = true; return showPins(pins || {}, true); }
     if (find) {
       $('fq').value = text || '';
       $('fcount').textContent = '';
@@ -142,6 +147,121 @@
     $('sheetClose').focus();
   }
 
+  // ------------------------------------------------ Downloads drop-down
+  // The last 3 downloads under the button at the top left of the sidebar, and
+  // "Click to see all" (the Library) when there are more. Like Arc's and Chrome's.
+  const size = n => (n >= 1073741824 ? (n / 1073741824).toFixed(1) + ' GB' : n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : (n || 0) + ' B');
+  const DL_IC = {
+    folder: '<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg>',
+    play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+    stop: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    retry: '<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg>',
+    file: '<svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>',
+  };
+  function showDownloads({ items = [], more = 0, x, y }, place) {
+    const pop = $('dlpop');
+    if (place) {
+      pop.style.left = Math.max(8, Math.min(x ?? 8, innerWidth - 340)) + 'px';
+      pop.style.top = Math.max(8, y ?? 44) + 'px';
+    }
+    $('dlitems').replaceChildren(...(items.length ? items.map(d => {
+      const li = document.createElement('li');
+      li.className = 'dl-item' + (d.state === 'completed' && d.exists ? ' done' : '') + (d.state === 'completed' && !d.exists ? ' gone' : '');
+      li.setAttribute('role', 'menuitem');
+      li.tabIndex = 0;
+      const running = d.state === 'progressing';
+      const pct = d.total ? Math.min(100, Math.round(100 * d.received / d.total)) : 30;
+      const sub = running ? (d.paused ? 'Paused · ' : '') + (d.total ? size(d.received) + ' of ' + size(d.total) : size(d.received))
+        : d.state === 'completed' ? (d.exists ? [size(d.total || d.received), d.host].filter(Boolean).join(' · ') : 'Deleted or moved')
+        : d.state === 'interrupted' ? (d.canResume ? 'Stopped: click ↻ to carry on' : 'Failed') : 'Cancelled';
+      const btns = running ? [d.paused ? ['resume', 'Resume', 'play'] : ['pause', 'Pause', 'pause'], ['cancel', 'Cancel', 'stop']]
+        : d.state === 'completed' ? (d.exists ? [['show', 'Show in folder', 'folder']] : [])
+        : [['retry', 'Retry', 'retry']];
+      const ic = document.createElement('span'); ic.className = 'dl-ic';
+      if (d.icon) { const img = document.createElement('img'); img.alt = ''; img.src = d.icon; ic.append(img); } else ic.innerHTML = DL_IC.file;
+      const t = document.createElement('span'); t.className = 'dl-t';
+      const b = document.createElement('b'); b.textContent = d.name;
+      const s = document.createElement('small'); s.textContent = sub;
+      t.append(b, s);
+      if (running) { const bar = document.createElement('i'); bar.className = 'dl-bar'; const fill = document.createElement('i'); fill.style.width = pct + '%'; bar.append(fill); t.append(bar); }
+      const acts = document.createElement('span'); acts.className = 'dl-acts';
+      for (const [op, label, icon] of btns) { const btn = document.createElement('button'); btn.dataset.op = op; btn.title = label; btn.setAttribute('aria-label', label); btn.innerHTML = DL_IC[icon]; acts.append(btn); }
+      li.append(ic, t, acts);
+      li.title = d.name;
+      li.onclick = e => {
+        const op = e.target.closest('[data-op]')?.dataset.op;
+        if (op) return act('dl:act', op, d.id);
+        if (d.state === 'completed' && d.exists) act('dl:act', 'open', d.id);
+      };
+      li.onkeydown = e => { if (e.key === 'Enter') li.click(); };
+      return li;
+    }) : [Object.assign(document.createElement('li'), { className: 'dl-empty', textContent: 'No downloads yet.' })]));
+    $('dlall').hidden = !more;
+    $('dlall').title = (items.length + more) + ' downloads';
+    if (place) setTimeout(() => (pop.querySelector('.dl-item') || $('dlall')).focus(), 0);
+  }
+  $('dlall').onclick = () => act('dl:act', 'all');
+  window.arch.on('dl:list', d => { if (mode === 'downloads') showDownloads(d, false); });
+  document.addEventListener('keydown', e => {
+    if (mode !== 'downloads' || $('dlpop').hidden) return;
+    if (e.key === 'Escape') act('cmd:close');
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const els = [...$('dlpop').querySelectorAll('.dl-item, .dl-all:not([hidden])')];
+      const i = els.indexOf(document.activeElement);
+      els[Math.max(0, Math.min(els.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))]?.focus();
+      e.preventDefault();
+    }
+  });
+
+  // ------------------------------------------------ Pin to Top Bar (from the lock menu)
+  // Each row pins or unpins one lock-menu item; the list redraws in place and stays open.
+  const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  function showPins({ items = [], count = 0, max = 6, x, y }, place) {
+    const pop = $('pinpop');
+    if (place) {
+      pop.style.left = Math.max(8, Math.min(x ?? 8, innerWidth - 310)) + 'px';
+      pop.style.top = Math.max(8, y ?? 44) + 'px';
+    }
+    const full = count >= max;
+    $('pinhead').textContent = `Pin to the top bar · ${count} of ${max}`;
+    $('pinnote').textContent = full ? `That’s the most (${max}). Untick one to add another.` : 'Click to pin or unpin.';
+    $('pinitems').replaceChildren(...items.map(it => {
+      const li = document.createElement('li');
+      const off = full && !it.pinned;
+      li.className = 'dl-item pin-item' + (it.pinned ? ' on' : '') + (off ? ' off' : '');
+      li.setAttribute('role', 'menuitemcheckbox');
+      li.setAttribute('aria-checked', String(!!it.pinned));
+      li.setAttribute('aria-disabled', String(off));
+      li.tabIndex = 0;
+      const ic = document.createElement('span'); ic.className = 'pin-ic'; ic.innerHTML = ArchIcons.svg(it.icon);
+      const t = document.createElement('span'); t.className = 'pin-t'; t.textContent = it.label;
+      const ck = document.createElement('span'); ck.className = 'pin-ck'; ck.innerHTML = it.pinned ? CHECK : '';
+      li.append(ic, t, ck);
+      if (off) li.title = `Only ${max} fit in the top bar. Untick one first.`;
+      li.onclick = async () => {
+        if (off) return;
+        const keep = it.id;
+        const data = await act('siteTool', 'toggle', it.id);
+        if (data && mode === 'pins') { showPins(data, false); [...$('pinitems').children][items.findIndex(x => x.id === keep)]?.focus(); }
+      };
+      li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); li.click(); } };
+      return li;
+    }));
+    if (place) setTimeout(() => $('pinitems').querySelector('.pin-item')?.focus(), 0);
+  }
+  $('pindone').onclick = () => act('cmd:close');
+  document.addEventListener('keydown', e => {
+    if (mode !== 'pins' || $('pinpop').hidden) return;
+    if (e.key === 'Escape') act('cmd:close');
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const els = [...$('pinpop').querySelectorAll('.pin-item, #pindone')];
+      const i = els.indexOf(document.activeElement);
+      els[Math.max(0, Math.min(els.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))]?.focus();
+      e.preventDefault();
+    }
+  });
+
   // ------------------------------------------------ Define (a word's meanings)
   function showDefine({ word, phonetic, meanings = [], more }) {
     $('sheetTitle').textContent = '';
@@ -233,6 +353,8 @@
       '<kbd>Shift</kbd>+click a link to look at it in Peek, without leaving the page you’re on.'] },
     { big: 'shield', title: 'Private by default', text: ['Ads and trackers are blocked, dangerous sites are flagged, and passwords, addresses and cards are kept encrypted on this PC.',
       'Press <kbd>Ctrl</kbd>+<kbd>/</kbd> any time to see every shortcut.'] },
+    { big: 'monitor', title: 'Coming from Chrome or Opera?', text: ['Prefer <kbd>Ctrl</kbd>+<kbd>1</kbd>–<kbd>9</kbd> for tabs? Settings › General has it. Right-click Back for recent pages, the address for Paste and go.',
+      'There’s no Quasar phone app, so tabs and passwords don’t reach your phone: use a page’s QR code (right-click the page) to open it there. Quasar has no AI assistant either, on purpose.'] },
   ];
   let slide = 0, tourInfo = {};
   function showTour(info) { tourInfo = info; slide = 0; drawTour(); }

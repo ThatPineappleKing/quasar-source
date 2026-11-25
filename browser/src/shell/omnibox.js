@@ -6,7 +6,7 @@
 // Part of the Shell class (src/shell.js): these methods are mixed into Shell.prototype,
 // so `this` is the Shell and every other part's methods are available on it.
 const { net } = require('electron');
-const { pinnedTabNodes } = require('./common');
+const { pinnedTabNodes, toUrl } = require('./common');
 
 // Each engine's own suggestion service; all answer [query, [suggestion, …]].
 const SUGGEST = {
@@ -61,6 +61,8 @@ class OmniboxPart {
   async searchSuggestions(text) {
     const q = String(text || '').trim();
     if (!this.suggestOn || this.isPrivate || !q || q.length > 200 || this.overlayMode === 'tabs') return [];
+    // Addresses (and anything with a user:password@ in it) aren't sent: you're going there, not searching.
+    if (toUrl(q) || /\S+:\S*@/.test(q)) return [];
     const tpl = SUGGEST[this.st.settings.searchEngine] || SUGGEST.Google;
     this._suggestAbort?.abort();
     const ctl = this._suggestAbort = new AbortController();

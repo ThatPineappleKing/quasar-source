@@ -97,6 +97,8 @@ class SpacesPart {
     try {
       this.vault.data.entries = this.vault.data.entries.filter(e => e.profile !== sp.partition);
       this.vault.data.never = this.vault.data.never.filter(n => n.profile !== sp.partition);
+      this.vault.data.addresses = this.vault.data.addresses.filter(a => a.profile !== sp.partition);
+      this.vault.data.cards = this.vault.data.cards.filter(c => c.profile !== sp.partition);
       this.vault.save();
     } catch { /* ignore */ }
     // Remembered permissions, zoom and downloads list for that Space go too.

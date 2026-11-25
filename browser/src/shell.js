@@ -15,10 +15,10 @@ const { Extensions } = require('./extensions');
 const { Backup } = require('./backup');
 const { Devices } = require('./devices');
 const { Components } = require('./components');
-const { UI, TOP, MARGIN, RADIUS, uid, hostOf, pinnedTabNodes } = require('./shell/common');
+const { UI, TOP, MARGIN, RADIUS, uid, hostOf, pinnedTabNodes, stripCreds } = require('./shell/common');
 const { PROFILE_KEYS, ZOOMS } = require('./shell/common');
 
-const PARTS = ['windows', 'profiles', 'downloads', 'pages', 'tabs', 'warnings', 'reader', 'layout', 'split', 'rules', 'peek', 'media', 'pinned', 'spaces', 'command', 'little', 'keyboard', 'library', 'autofill', 'arc', 'tools', 'collections', 'workspace', 'apps', 'pagetext', 'migrate', 'privacy', 'everyday', 'power', 'vpn', 'focus', 'omnibox', 'appearance'].map(n => require('./shell/' + n));
+const PARTS = ['windows', 'profiles', 'downloads', 'pages', 'tabs', 'warnings', 'reader', 'layout', 'split', 'rules', 'peek', 'media', 'pinned', 'spaces', 'command', 'little', 'keyboard', 'library', 'autofill', 'arc', 'tools', 'collections', 'workspace', 'apps', 'pagetext', 'migrate', 'privacy', 'everyday', 'power', 'vpn', 'focus', 'omnibox', 'appearance', 'icons', 'habits', 'sitetools'].map(n => require('./shell/' + n));
 
 class Shell {
   constructor() {
@@ -80,7 +80,11 @@ class Shell {
     // Open tabs: by default they don't survive closing Quasar (pinned tabs and Favorites
     // do) and go to the Archive. With "Continue where you left off" they come back,
     // asleep (nothing loads until you click one), until auto-archive takes them.
-    const keep = !!this.st.settings.keepTabs;
+    // Quasar crashed, or Windows restarted / signed out last time: tabs come back even with
+    // "Continue where you left off" off (like Chrome's "Restore pages?").
+    const { crashed, planned } = this.crashCheck();
+    const keep = !!this.st.settings.keepTabs || crashed || planned;
+    let restoredCount = 0;
     for (const sp of this.st.spaces) {
       this.order[sp.id] = [];
       const groups = new Map();
@@ -89,6 +93,7 @@ class Shell {
         if (!keep) return this.st.archive.unshift({ id: uid(), url: t.url, title: t.title || t.url, favicon: t.favicon || '', spaceId: sp.id, closedAt: Date.now() });
         const tab = this.record({ url: t.url, title: t.title, favicon: t.favicon, lastActive: t.lastActive, spaceId: sp.id });
         tab.sleeping = true;
+        if (!this.st.settings.keepTabs) { tab.restored = true; restoredCount++; }
         if (t.group) tab.groupId = t.group;
         this.order[sp.id].push(tab.id);
         if (i === sp.activeIndex) this.activeBySpace[sp.id] = tab.id;
@@ -116,6 +121,7 @@ class Shell {
     }
     if (focus) { this.cur = focus; focus.win.once('ready-to-show', () => setTimeout(() => !focus.win.isDestroyed() && focus.win.focus(), 50)); }
     this.offerDownloadResume();
+    if (crashed && restoredCount) this.crashNotice(restoredCount);
     this.updater.start();
     this.protection.start();
     this.extensions.start();
@@ -130,6 +136,7 @@ class Shell {
     setInterval(() => this.enforceMemoryLimit(), 30e3);
     this.startBatteryWatch();
     this.startLockWatch();
+    this.scheduleIconFill(8000);   // icons for pinned tabs and Favorites that haven't been opened
 
     if (this.migrationNote) {
       this.win.webContents.once('did-finish-load', () => setTimeout(() => this.toast(this.migrationNote), 1500));
@@ -172,10 +179,13 @@ class Shell {
       sp.tabs = list.map(id => this.tabs.get(id)).filter(Boolean)
         .map(t => {
           const g = t.splitId ? this.splits.get(t.splitId) : null;
-          return { url: t.url, title: t.title, favicon: t.favicon, lastActive: t.lastActive, ...(g && !g.pinnedRef ? { split: g.id } : {}), ...(t.groupId ? { group: t.groupId } : {}) };
+          return { url: stripCreds(t.url), title: t.title, favicon: t.favicon, lastActive: t.lastActive, ...(g && !g.pinnedRef ? { split: g.id } : {}), ...(t.groupId ? { group: t.groupId } : {}) };
         });
       sp.activeIndex = list.indexOf(this.activeBySpace[sp.id]);
-      for (const p of pinnedTabNodes(sp.pinned)) { const t = this.liveTab('pinned', p.id); if (t?.favicon) p.favicon = t.favicon; }
+      // Pinned tabs and Favorites remember their open tab's icon; icons.js keeps it as an image.
+      const keepIcon = (n, t) => { if (t?.favicon && !/^data:,?$/.test(t.favicon) && t.favicon !== n.faviconSrc) { n.faviconSrc = t.favicon; n.favicon = t.favicon; delete n.iconTried; this.scheduleIconFill(); } };
+      for (const p of pinnedTabNodes(sp.pinned)) keepIcon(p, this.liveTab('pinned', p.id));
+      for (const f of sp.favorites || []) keepIcon(f, this.liveTab('fav', f.id));
     }
     // Nothing from private windows is ever written to disk.
     if (this.privateSpaces.size) {
@@ -280,7 +290,7 @@ class Shell {
         readerable: !!act.readerable, reading: !!act.view?.webContents && !act.view.webContents.isDestroyed() && this.isReaderPage(act.view.webContents.getURL()),
         foreign: !!act.pageLang && act.pageLang.split('-')[0].toLowerCase() !== this.translateTo ? this.langName(act.pageLang.split('-')[0]) : null,
         translated: /\.translate\.goog$/i.test(hostOf(act.url)) || !!act.translated, translating: !!act.translating,
-        adsAllowed: this.protection.adsAllowed(hostOf(act.url)) } : null,
+        adsAllowed: this.protection.adsAllowed(hostOf(act.url)), popups: (act.blockedPopups || []).length, siteMuted: !!act.siteMuted } : null,
       protection: this.protection.status(),
       // Extension toolbar: the Space's session and the active tab's id.
       ext: { count: sp.private ? 0 : this.extensions.enabledFor(sp.partition).length, partition: sp.private ? null : 'persist:' + sp.partition,
@@ -307,6 +317,7 @@ class Shell {
       dark: !!act && this.darkFor(act.url),
       layout: { top: this.topH(), margin: MARGIN, radius: this.radiusPx() },
       autoHide: this.anyAutoHide,
+      siteTools: this.siteToolsViewModel(),   // lock-menu items pinned to the top bar
       ...this.appearanceViewModel(),
     };
   }
@@ -346,7 +357,21 @@ class Shell {
       case 'update:major': return this.updater.offerMajor();
       case 'update:rollback': return this.updater.rollback();
       case 'quitAll': return this.quitAll();
-      case 'app:restart': app.relaunch(); return this.quitAll();
+      case 'app:restart': this.st.restoreNext = true; app.relaunch(); return this.quitAll();
+      // Chrome and Opera habits (src/shell/habits.js)
+      case 'navMenu': return this.navMenu(args[0] === 'forward' ? 'forward' : 'back', Number(args[1]) || 0, Number(args[2]) || 0);
+      case 'urlMenu': return this.urlMenu(Number(args[0]) || 0, Number(args[1]) || 0).catch(() => {});
+      case 'popups': return this.popupAct(String(args[0] || ''), args[1], args[2]);
+      case 'restored:close': return this.closeRestoredTabs();
+      case 'reopenBatch': return this.reopenBatch(String(args[0] || ''));
+      case 'reopenWindow': return this.reopenClosedWindow();
+      case 'protoHandler': return this.acceptProtocolHandler(String(args[0] || ''));
+      case 'notify:answer': return this.answerNotify(String(args[0] || ''), !!args[1]);
+      case 'autodl:answer': return this.answerAutoDownload(String(args[0] || ''), !!args[1]);
+      case 'dropped': return this.openDropped(args[0] && typeof args[0] === 'object' ? args[0] : {});
+      case 'cast': return this.castTab();
+      case 'share': return this.sharePage();
+      case 'siteTool': return this.siteToolAct(String(args[0] || ''), args[1], args[2], args[3]);
       // pinned folders
       case 'pinnedMenu': return this.pinnedMenu(args[0], Number(args[1]) || 0, Number(args[2]) || 0);
       case 'movePinned': return this.movePinned(args[0], args[1] || null, args[2] === 'into' ? 'into' : 'before');
@@ -421,6 +446,12 @@ class Shell {
         if (key === 'bgEvery' && ['open', '10', '60', '1440'].includes(String(val))) this.st.settings.bgEvery = String(val);
         if (key === 'sidebarSide') { this.st.settings.sidebarSide = ['right', 'top'].includes(val) ? val : 'left'; for (const W of this.wins) W.sbPanel = false; this.layoutAll(); }
         if (key === 'tabCycle') this.st.settings.tabCycle = val === 'order' ? 'order' : 'mru';
+        if (key === 'ctrlNumber') this.st.settings.ctrlNumber = val === 'tabs' ? 'tabs' : 'spaces';
+        if (key === 'autoplay') this.st.settings.autoplay = val === 'block' ? 'block' : 'allow';
+        if (key === 'notifyPrompts') this.st.settings.notifyPrompts = ['quiet', 'block'].includes(val) ? val : 'ask';
+        if (key === 'mailto' && ['', 'gmail', 'outlook', 'yahoo', 'site'].includes(val)) this.st.settings.mailto = val;
+        if (key === 'netLimitKB') { this.st.settings.netLimitKB = Math.max(0, Math.min(1e6, Number(val) || 0)); this.applyNetLimit(); }
+        if (['tabSwitcher', 'swipeNav', 'quickMenu', 'clearOnExit', 'popupToast'].includes(key)) this.st.settings[key] = !!val;
         if (key === 'sleepAfterMin') this.st.settings.sleepAfterMin = Math.max(0, Math.min(1440, Number(val) || 0));
         if (key === 'autoUpdate') { this.st.settings.autoUpdate = !!val; if (val) this.updater.check(); }
         if (key === 'blockAds' || key === 'safeBrowsing' || key === 'httpsOnly' || key === 'cookieBanners' || key === 'fingerprinting') this.st.settings[key] = !!val;
@@ -468,6 +499,8 @@ class Shell {
       case 'card:skip': return this.pendingCards?.delete(args[0]);
       // command bar (overlay)
       case 'cmd:query': return this.commandQuery(String(args[0] || ''));
+      case 'dl:menu': return this.openDownloadsMenu(Number(args[0]) || 0, Number(args[1]) || 0);
+      case 'dl:act': return this.dlMenuAct(String(args[0] || ''), args[1]);
       case 'cmd:suggest': return this.searchSuggestions(String(args[0] || ''));
       case 'define': return this.defineWord(String(args[0] || ''));
       case 'cmd:run': return this.commandRun(args[0], args[1]);

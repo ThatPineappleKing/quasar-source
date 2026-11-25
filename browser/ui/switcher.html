@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Ctrl+Tab switcher: pictures of the tabs while Ctrl is held (src/shell/habits.js). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https: http:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Tabs</title>
+  <style>
+    :root { color-scheme: light dark; --bg: rgba(250, 248, 255, .92); --fg: #1d1730; --mut: #6d6680; --sel: #6b4fd8; --card: #fff; }
+    @media (prefers-color-scheme: dark) { :root { --bg: rgba(30, 26, 40, .92); --fg: #ece8f6; --mut: #9d96b0; --sel: #b8a4ff; --card: #2a2537; } }
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; font: 12px/1.3 "Segoe UI", system-ui, sans-serif; color: var(--fg); }
+    #row { box-sizing: border-box; height: 100%; display: flex; gap: 12px; padding: 14px 16px; justify-content: center; align-items: center;
+      background: var(--bg); border-radius: 16px; backdrop-filter: blur(20px); box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+    .t { width: 160px; flex: none; border-radius: 10px; padding: 5px; border: 2px solid transparent; }
+    .t.on { border-color: var(--sel); background: color-mix(in srgb, var(--sel) 14%, transparent); }
+    .pic { height: 108px; border-radius: 7px; background: var(--card) center top / cover no-repeat; display: grid; place-items: center; }
+    .pic img.fav { width: 32px; height: 32px; }
+    .name { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+    .name img { width: 14px; height: 14px; flex: none; }
+    .name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+    .host { color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  </style>
+</head>
+<body>
+  <div id="row"></div>
+  <script src="switcher.js"></script>
+</body>
+</html>

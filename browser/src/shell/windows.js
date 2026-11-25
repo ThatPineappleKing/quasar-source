@@ -72,6 +72,8 @@ class WindowsPart {
       const normal = [...this.wins].filter(x => !x.private);
       if (normal.length) this.st.windows = normal.map(x => this.winInfo(x));
       this.quittingAll = true;
+      this.sessionEnding = true;
+      this.st.restoreNext = true;   // tabs come back after Windows restarts (as Chrome does)
       for (const x of this.wins) x.quitReady = true;
     });
     // Closing asks each page that would be lost whether it can unload ("Leave site?").
@@ -166,13 +168,18 @@ class WindowsPart {
         if (last || ![...this.wins].some(x => x !== W && !x.private)) {
           this.st.windows = [...this.recentlyClosed.map(x => x.info), info];
           this.recentlyClosed = [];
-        } else this.recentlyClosed.push({ at: now, info });
+        } else { this.recentlyClosed.push({ at: now, info }); this.rememberClosedWindow(W); }
       }
     }
     if (W.private) this.dropPrivateSpace(W.spaceId);
     if (last) {
       for (const x of this.wins) if (x !== W && x.private && !x.win.isDestroyed()) this.dropPrivateSpace(x.spaceId);
-      if (!this.st.settings.keepTabs) this.closeAllTabsForQuit();
+      // Windows restarting, "Restart Quasar" or an update restart: tabs stay for next time.
+      const restarting = this.sessionEnding || this.st.restoreNext || !!(this.updater.ready && this.updater.restart);
+      if (restarting) this.st.restoreNext = true;
+      if (!this.st.settings.keepTabs && !restarting) this.closeAllTabsForQuit();
+      this.st.running = false;   // a clean quit (see crashCheck in habits.js)
+      for (const x of this.wins) this.hideSwitcher(x);
       this.suspendDownloads();
       try { this.updater.onExit(); } catch { /* never block quitting */ }
       try { this.backup.flushOnExit(); } catch { /* never block quitting */ }

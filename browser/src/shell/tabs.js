@@ -3,7 +3,7 @@
 // so `this` is the Shell and every other part's methods are available on it.
 const { app, Menu, clipboard } = require('electron');
 const store = require('../store');
-const { uid, hostOf, walkPinned, findPinned, pinnedTabNodes, pageUrl, toUrl } = require('./common');
+const { uid, hostOf, walkPinned, findPinned, pinnedTabNodes, pageUrl, toUrl, stripCreds } = require('./common');
 
 class TabsPart {
   // ------------------------------------------------------- tab sleeping
@@ -59,6 +59,12 @@ class TabsPart {
   //          Air Traffic Control rules may send it to another Space.
   newTab(url, { spaceId = this.curSpaceId, active = true, kind = 'today', ref = null, after = null, route = false } = {}) {
     if (!this.spaceById(spaceId)) spaceId = this.curSpaceId;
+    // Tab menu › New Tab to the Right: the next tab opened from the command bar goes there.
+    const right = this.cur?.newTabRight;
+    if (right && kind === 'today' && !after) {
+      this.cur.newTabRight = null;
+      if (Date.now() - right.at < 120e3 && this.tabs.get(right.id)?.spaceId === spaceId) after = right.id;
+    }
     if (route && kind === 'today' && !this.privateSpaces.has(spaceId)) {
       const target = this.atcTarget(url);
       if (target && target.id !== spaceId) {
@@ -121,7 +127,7 @@ class TabsPart {
     const list = this.order[tab.spaceId] || [];
     const idx = list.indexOf(id);
     if (tab.kind === 'today') {
-      this.closed.push({ url: tab.url, title: tab.title, spaceId: tab.spaceId });
+      this.closed.push({ url: tab.url, title: tab.title, spaceId: tab.spaceId, index: idx, ...(tab.closeBatch ? { batch: tab.closeBatch } : {}) });
       if (this.closed.length > 30) this.closed.shift();
       list.splice(idx, 1);
     }
@@ -159,6 +165,7 @@ class TabsPart {
     // Only tabs closed in this Space.
     for (let i = this.closed.length - 1; i >= 0; i--) {
       if (this.closed[i].spaceId !== this.curSpaceId) continue;
+      if (this.closed[i].batch) return this.reopenBatch(this.closed[i].batch);
       const [c] = this.closed.splice(i, 1);
       return this.newTab(c.url, { spaceId: c.spaceId });
     }
@@ -191,18 +198,21 @@ class TabsPart {
     c.at = Date.now();
     this.cycling = true;
     try { this.show(c.ids[c.i]); } finally { this.cycling = false; }
+    this.showSwitcher(W, c);   // pictures of the tabs while Ctrl is held (like Opera)
   }
 
   // Ctrl let go: the tab you landed on becomes the most recent one.
   endCycle(W = this.cur) {
     if (!W?.mruCycle) return;
     W.mruCycle = null;
+    this.hideSwitcher(W);
     const t = this.tabs.get(W.activeTabId);
     if (t) t.lastActive = Date.now();
   }
 
   // ---- closing several tabs at once
   closeTabs(ids) {
+    this.closeBatch(ids);   // several at once: one Undo (and Ctrl+Shift+T) brings them all back
     for (const id of [...new Set(ids)]) if (this.tabs.has(id)) this.closeTab(id);
   }
 
@@ -259,6 +269,7 @@ class TabsPart {
       { label: 'Put Other Tabs to Sleep', click: () => this.sleepOtherTabs() },
       { label: 'Reload', enabled: !!live, click: () => wc.reload() },
       { label: 'Duplicate', click: () => this.newTab(tab.url, { spaceId: tab.spaceId, after: tabId }) },
+      { label: 'New Tab to the Right', visible: tab.kind === 'today', click: () => { this.cur.newTabRight = { id: tabId, at: Date.now() }; this.newTabAction(); } },
       { type: 'separator' },
       { label: 'Move to New Window', visible: !priv, click: () => this.newWindow({ tabId }) },
       { label: 'Move to Space', visible: tab.kind === 'today' && others.length > 0, submenu: others.map(s => ({
@@ -271,6 +282,8 @@ class TabsPart {
       { label: 'Copy Link', click: () => clipboard.writeText(tab.url) },
       { type: 'separator' },
       { label: 'Close Tab', accelerator: 'Ctrl+W', registerAccelerator: false, click: () => this.closeTab(tabId) },
+      { label: 'Reopen Closed Tab', accelerator: 'Ctrl+Shift+T', registerAccelerator: false, enabled: this.closed.some(c => c.spaceId === this.curSpaceId), click: () => this.reopenClosed() },
+      { label: 'Reopen Closed Window', enabled: !!this.closedWins?.length, click: () => this.reopenClosedWindow() },
       { label: 'Close Other Tabs', visible: tab.kind === 'today', enabled: otherTabs.length > 0, click: () => this.closeTabs(otherTabs) },
       { label: 'Close Tabs Below', visible: tab.kind === 'today', enabled: below.length > 0, click: () => this.closeTabs(below) },
       { label: `Close Tabs in “${(parentFolder?.title || '').slice(0, 30)}”`, visible: !!parentFolder, click: () => this.closeFolderTabs(parentFolder.id) },
@@ -348,6 +361,7 @@ class TabsPart {
   // ------------------------------------------------------------ history
   // History is kept per Space; other Spaces never see it.
   touchHistory(spaceId, url, title, visit = false) {
+    url = stripCreds(url);
     if (!url || /^(about|data|file|devtools|chrome|chrome-extension|view-source):/i.test(url)) return;
     const sp = this.spaceById(spaceId);
     if (!sp) return;

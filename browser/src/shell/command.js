@@ -16,6 +16,7 @@ class CommandPart {
     this.overlay = ov;
     ov.setBackgroundColor('#00000000');
     ov.webContents.on('before-input-event', (e, input) => { if (this.wins.has(W)) this.cur = W; this.onKey(e, input); });
+    ov.webContents.on('context-menu', (e, p) => { if (p.isEditable) this.overlayMenu(W, ov.webContents, p).catch(() => {}); });   // Paste and go
     ov.webContents.loadFile(path.join(UI, 'command.html'));
     this.overlayReady = new Promise(r => ov.webContents.once('did-finish-load', r));
   }
@@ -200,6 +201,7 @@ class CommandPart {
       { id: 'focus-sidebar', title: 'Move keyboard focus to the sidebar', icon: 'focus', badge: 'F6' },
       { id: 'identity-chrome', title: 'Tell this site I’m using Chrome', icon: 'id' },
       { id: 'identity-arch', title: 'Tell this site I’m using Quasar (default)', icon: 'id' },
+      ...this.habitActions(),
       ...this.chains.map(c => ({ id: 'chain:' + c.id, title: c.name, icon: 'link', badge: c.keys || 'Chain' })),
       ...(this.isPrivate ? [] : this.st.spaces.map(s => ({ id: 'space:' + s.id, title: `Switch to ${s.name}`, glyph: s.emoji || '●', badge: s.locked ? 'Locked Space' : 'Space' }))),
     ];
@@ -302,6 +304,7 @@ class CommandPart {
     if (this.recording && !id.startsWith('chain')) this.recording.push(id);
     if (id.startsWith('space:')) return this.switchSpace(id.slice(6));
     if (id.startsWith('chain:')) return this.runChain(id.slice(6));
+    if (this.habitAction(id) !== false) return;
     const tab = this.active;
     const host = hostOf(tab?.url || '');
     switch (id) {

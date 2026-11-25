@@ -290,11 +290,14 @@ class WarningsPart {
       const names = { media: 'Camera and microphone', geolocation: 'Location', notifications: 'Notifications', midi: 'MIDI devices',
         midiSysex: 'MIDI devices (full control)', 'clipboard-read': 'Clipboard', 'display-capture': 'Screen sharing', 'idle-detection': 'Idle detection' };
       const prefix = `${tab.profile}|${u.origin}|`;
-      const perms = [...this.permissions].filter(([k]) => k.startsWith(prefix));
+      const own = ['sound', 'popups', 'automatic-downloads'];   // shown as Site settings below
+      const perms = [...this.permissions].filter(([k]) => k.startsWith(prefix) && !own.includes(k.slice(prefix.length)));
+      items.push(sep, { label: 'Site settings', enabled: false }, ...this.siteSettingItems(tab));
       items.push(sep, { label: 'Permissions', enabled: false });
       if (!perms.length) items.push({ label: 'No permissions asked for yet', enabled: false });
       for (const [k, allowed] of perms) {
         const perm = k.slice(prefix.length);
+        if (perm.startsWith('external:')) names[perm] = `Open “${perm.slice(9)}:” links in another app`;
         items.push({ label: `${names[perm] || perm}: ${allowed ? 'Allowed' : 'Blocked'}`, submenu: [
           { label: 'Allow', type: 'radio', checked: allowed, click: () => this.setPermission(k, true) },
           { label: 'Block', type: 'radio', checked: !allowed, click: () => this.setPermission(k, false) },
@@ -331,7 +334,7 @@ class WarningsPart {
           { label: 'Any Space (no rule)', type: 'radio', checked: !rule, click: () => { this.st.atc = this.st.atc.filter(r => r.pattern !== site); this.persist(); this.libUpdate(); } },
         ] });
     }
-    items.push(sep, { label: 'All site settings…', click: () => this.openLibrary('sites') });
+    items.push(sep, { label: 'All site settings…', click: () => this.openLibrary('sites') }, this.siteToolPinMenu(x, y));
     Menu.buildFromTemplate(items).popup({ window: this.win, x: Math.round(x), y: Math.round(y) });
   }
 

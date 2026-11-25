@@ -64,6 +64,7 @@ class MigratePart {
   addImportedBookmarks(tree, title, sp = this.space) {
     const folder = { id: uid(), type: 'folder', title: String(title).slice(0, 80), open: false, children: importPinned(tree) };
     sp.pinned.push(folder);
+    this.scheduleIconFill();
     return folder;
   }
 
@@ -131,20 +132,21 @@ class MigratePart {
   // ------------------------------------------------------ password export
   // Like Chrome and Edge: Windows Hello first, a warning that the file isn't encrypted,
   // then a CSV (name,url,username,password,note) any password manager can import.
-  async exportPasswords({ file = null, all = null } = {}) {
+  // Only the current profile's passwords (each profile's passwords stay with it).
+  async exportPasswords({ file = null, profile = null, confirm = !file } = {}) {
     if (!this.vault.available) return { error: 'Passwords aren’t available.' };
     if (!(await this.verifyUser('Quasar wants to export your saved passwords.'))) return null;
     const sp = this.space;
-    if (all === null) {
+    profile ||= sp.partition;
+    if (confirm) {
       const { response } = await dialog.showMessageBox(this.win, {
-        type: 'warning', buttons: [`Export ${sp.name}’s passwords`, 'Export all profiles', 'Cancel'], defaultId: 0, cancelId: 2, noLink: true,
+        type: 'warning', buttons: [`Export ${sp.name}’s passwords`, 'Cancel'], defaultId: 0, cancelId: 1, noLink: true,
         message: 'Export passwords?',
-        detail: 'The file will hold your passwords as plain text. Anyone who can open it can read them. Import it where you need it, then delete it.',
+        detail: 'Only this profile’s passwords are exported. The file will hold them as plain text: anyone who can open it can read them. Import it where you need it, then delete it.',
       });
-      if (response === 2) return null;
-      all = response === 1;
+      if (response !== 0) return null;
     }
-    const entries = this.vault.data.entries.filter(e => all || e.profile === sp.partition);
+    const entries = this.vault.data.entries.filter(e => e.profile === profile);
     if (!file) {
       const r = await dialog.showSaveDialog(this.win, { title: 'Export passwords', defaultPath: path.join(app.getPath('documents'), 'Quasar Passwords.csv'), filters: [{ name: 'CSV', extensions: ['csv'] }] });
       if (r.canceled || !r.filePath) return null;

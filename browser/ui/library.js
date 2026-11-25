@@ -422,7 +422,9 @@
 
   // ------------------------------------------------------ site settings
   const PERM = { media: 'Camera and microphone', geolocation: 'Location', notifications: 'Notifications', midi: 'MIDI devices',
-    midiSysex: 'MIDI devices (full control)', 'clipboard-read': 'Clipboard', 'display-capture': 'Screen sharing', 'idle-detection': 'Idle detection' };
+    midiSysex: 'MIDI devices (full control)', 'clipboard-read': 'Clipboard', 'display-capture': 'Screen sharing', 'idle-detection': 'Idle detection',
+    sound: 'Sound', popups: 'Pop-ups and redirects', 'automatic-downloads': 'Automatic downloads' };
+  const permName = p => PERM[p] || (p.startsWith('external:') ? `Open “${p.slice(9)}:” links in another app` : p);
   async function loadSites() {
     const q = $('siteSearch').value.trim().toLowerCase();
     let sites = await act('lib:sites', spaceId);
@@ -436,8 +438,8 @@
       <span class="s-host" title="${esc(s.origin)}">${esc(s.host)}</span>
       <button class="btn ghost small" data-op="clear">Clear cookies and data…</button>
       <div class="s-rows">
-        ${s.perms.map(p => `<div class="s-row"><span>${esc(PERM[p.perm] || p.perm)}</span>
-          <select data-key="${esc(p.key)}" aria-label="${esc(PERM[p.perm] || p.perm)}">
+        ${s.perms.map(p => `<div class="s-row"><span>${esc(permName(p.perm))}</span>
+          <select data-key="${esc(p.key)}" aria-label="${esc(permName(p.perm))}">
             <option value="allow" ${p.allowed ? 'selected' : ''}>Allow</option>
             <option value="block" ${!p.allowed ? 'selected' : ''}>Block</option>
             <option value="ask">Ask next time</option>

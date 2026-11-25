@@ -1,6 +1,11 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const act = (n, ...a) => window.arch.act(n, ...a);
+  const call = (n, ...a) => window.arch.act(n, ...a);
+  const act = async (n, ...a) => {
+    const r = await call(n, ...a);
+    if (r && r.locked && n !== 'pwm:list') { showLock(); return null; }
+    return r;
+  };
   const host = o => { try { return new URL(o).hostname.replace(/^www\./, ''); } catch { return o; } };
   const ICON = {
     eye: '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
@@ -12,8 +17,38 @@
   let data = null;
   const revealed = new Map(); // id -> password (only while this window is open)
 
-  async function load() {
-    data = await act('pwm:list');
+  // ---- the lock (Windows Hello every time Passwords opens)
+  let asking = false;
+  function showLock(msg = '') {
+    revealed.clear(); shownCards?.clear?.();
+    document.body.classList.add('pw-locked');
+    $('pwLock').hidden = false;
+    $('lockMsg').textContent = msg;
+    $('unlockBtn').focus();
+  }
+  async function unlock() {
+    if (asking) return;
+    asking = true;
+    $('unlockBtn').disabled = true;
+    $('lockMsg').textContent = 'Waiting for Windows Hello…';
+    const ok = await call('pwm:unlock');
+    asking = false;
+    $('unlockBtn').disabled = false;
+    if (!ok) return showLock('Not unlocked. Try again when you’re ready.');
+    $('pwLock').hidden = true;
+    document.body.classList.remove('pw-locked');
+    load();
+  }
+  $('unlockBtn').onclick = unlock;
+
+  async function load(first = false) {
+    data = await call('pwm:list');
+    if (data?.locked) {
+      ArchTheme.apply(document.documentElement, data.space);
+      showLock();
+      if (first) unlock();   // opening Passwords asks straight away
+      return;
+    }
     ArchTheme.apply(document.documentElement, data.space);
     const fill = (sel, withAll, def) => {
       const cur = sel.value || def;
@@ -39,7 +74,7 @@
       ? [weak && `${weak} weak password${weak === 1 ? '' : 's'}`, reused && `${reused} password${reused === 1 ? ' is' : 's are'} used on more than one site`].filter(Boolean).join(' · ') +
         '. Change them on those sites: Quasar suggests a strong password when you set a new one.'
       : 'No weak or reused passwords.';
-    $('summary').textContent = `${data.entries.length} saved password${data.entries.length === 1 ? '' : 's'}` +
+    $('summary').textContent = `${data.entries.length} saved password${data.entries.length === 1 ? '' : 's'} in ${data.profileName || 'this profile'} (other profiles' passwords are only shown from their own Spaces)` +
       (data.available ? '' : ' · Windows encryption unavailable: saving is disabled');
     $('empty').hidden = data.entries.length > 0;
     $('list').replaceChildren(...rows.map(e => {
@@ -50,7 +85,7 @@
         <span class="site"></span><span class="user"></span>
         <span class="pass ${pw == null ? 'hidden-pw' : ''}"></span>
         <span class="acts">
-          <button data-a="reveal" title="${pw == null ? 'Show' : 'Hide'} password">${pw == null ? ICON.eye : ICON.eyeOff}</button>
+          <button data-a="reveal" title="Hold to show the password" aria-label="Hold to show the password">${ICON.eye}</button>
           <button data-a="copy" title="Copy password">${ICON.copy}</button>
           <button data-a="copyUser" title="Copy username">${ICON.user}</button>
           <button data-a="otp" title="${e.hasOtp ? 'Authenticator code (click to copy; right-click to change or remove)' : 'Add an authenticator (2FA) key'}" class="${e.hasOtp ? 'otp-on' : ''}">${ArchIcons.svg('hash')}</button>
@@ -65,14 +100,16 @@
       if (e.reused) { const f = document.createElement('span'); f.className = 'flag reused'; f.textContent = `Reused on ${e.reused} other site${e.reused === 1 ? '' : 's'}`; site.append(f); }
       if (e.breached) { const f = document.createElement('span'); f.className = 'flag weak'; f.textContent = `Found in data breaches (${e.breached.toLocaleString()}×)`; site.append(f); }
       li.querySelector('[data-a=otp]').oncontextmenu = ev => { ev.preventDefault(); if (e.hasOtp) editOtp(e, li); };
-      li.querySelector('.pass').textContent = pw ?? '••••••••';
+      li.querySelector('.pass').textContent = '••••••••';
+      holdToShow(li.querySelector('[data-a=reveal]'), () => act('pwm:reveal', e.id), text => {
+        const p = li.querySelector('.pass');
+        p.textContent = text ?? '••••••••';
+        p.classList.toggle('hidden-pw', text == null);
+      });
       li.querySelector('.acts').onclick = async ev => {
         const a = ev.target.closest('[data-a]')?.dataset.a;
-        if (a === 'reveal') {
-          if (revealed.has(e.id)) revealed.delete(e.id);
-          else { const p = await act('pwm:reveal', e.id); if (p != null) revealed.set(e.id, p); }
-          render();
-        } else if (a === 'copy') { if (await act('pwm:copy', e.id)) flash(li, 'Password copied'); }
+        if (a === 'reveal') return;   // (held, not clicked: see holdToShow)
+        if (a === 'copy') { if (await act('pwm:copy', e.id)) flash(li, 'Password copied'); }
         else if (a === 'copyUser') { await act('pwm:copyUser', e.id); flash(li, 'Username copied'); }
         else if (a === 'del') { if (await act('pwm:delete', e.id)) { revealed.delete(e.id); load(); } }
         else if (a === 'otp') {
@@ -158,13 +195,14 @@
       s.textContent = [c.brand, c.month && c.year ? `expires ${String(c.month).padStart(2, '0')}/${c.year}` : '', c.name].filter(Boolean).join(' · ') + ` · ${spaceName(c.profile)}`;
       main.append(b, s);
       const acts = document.createElement('span'); acts.className = 'acts';
-      acts.innerHTML = `<button data-a="show" title="${shownCards.has(c.id) ? 'Hide' : 'Show'} number">${shownCards.has(c.id) ? ICON.eyeOff : ICON.eye}</button><button data-a="edit" title="Edit">${ArchIcons.svg('pen')}</button><button data-a="del" class="del" title="Delete">${ICON.del}</button>`;
+      acts.innerHTML = `<button data-a="show" title="Hold to show the number" aria-label="Hold to show the number">${ICON.eye}</button><button data-a="edit" title="Edit">${ArchIcons.svg('pen')}</button><button data-a="del" class="del" title="Delete">${ICON.del}</button>`;
       acts.onclick = async ev => {
         const x = ev.target.closest('[data-a]')?.dataset.a;
-        if (x === 'show') { if (shownCards.has(c.id)) shownCards.delete(c.id); else { const n = await act('pwm:revealCard', c.id); if (n) shownCards.set(c.id, n); } renderCards(); }
+        if (x === 'show') return;   // held, not clicked
         if (x === 'edit') openCardForm(c);
         if (x === 'del') { if (await act('pwm:deleteCard', c.id)) load(); }
       };
+      holdToShow(acts.querySelector('[data-a=show]'), () => act('pwm:revealCard', c.id), num => { b.textContent = `${c.nickname || c.brand} ${num || '•••• ' + c.last4}`; });
       li.append(main, acts);
       return li;
     }) : [Object.assign(document.createElement('li'), { textContent: 'No saved cards. Add one here, or pay on a site and choose Save card.', className: 'empty-addr' })]));
@@ -218,6 +256,32 @@
     f.querySelector('input').focus();
   }
 
+  // Press and hold: the secret shows only while the button is held (mouse, touch or
+  // Space/Enter), and hides the moment it's let go, the pointer leaves, or the window
+  // loses focus. If Windows Hello has to ask again, it only shows if still held after.
+  function holdToShow(btn, fetch, show) {
+    let held = false, token = 0;
+    const down = async e => {
+      if (e.type === 'pointerdown' && e.button !== 0) return;
+      if (e.type === 'keydown' && ((e.key !== ' ' && e.key !== 'Enter') || e.repeat)) return;
+      e.preventDefault();
+      held = true;
+      btn.classList.add('holding');
+      const my = ++token;
+      const secret = await fetch();
+      if (held && my === token && secret != null) show(secret);
+    };
+    const up = () => { held = false; token++; btn.classList.remove('holding'); show(null); };
+    btn.addEventListener('pointerdown', e => { btn.setPointerCapture?.(e.pointerId); down(e); });
+    btn.addEventListener('pointerup', up);
+    btn.addEventListener('pointercancel', up);
+    btn.addEventListener('lostpointercapture', up);
+    btn.addEventListener('keydown', down);
+    btn.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') up(); });
+    btn.addEventListener('blur', up);
+    window.addEventListener('blur', up);
+  }
+
   function flash(li, text) {
     const s = li.querySelector('.user');
     const old = s.textContent;
@@ -241,5 +305,5 @@
   };
   // Hide revealed passwords when the window loses focus.
   window.addEventListener('blur', () => { if (revealed.size || shownCards.size) { revealed.clear(); shownCards.clear(); render(); } });
-  load();
+  load(true);
 })();

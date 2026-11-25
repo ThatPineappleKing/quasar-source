@@ -204,6 +204,7 @@ class Updater {
       a = this.active;
     }
     this.relaunchExe = a.exe;
+    this.shell.st.restoreNext = true;   // the restarted Quasar reopens your tabs
     this.shell.quitAll();
   }
 
