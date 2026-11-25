@@ -1,5 +1,8 @@
 # Quasar (formerly Arch) — project notes
 
+**New here? Read `HANDOFF.md` first:** the full handoff (architecture, data model, IPC,
+updates, releases, gotchas, conventions). This file is the short version.
+
 Two products live here:
 
 - **`browser/`: Quasar**, the main product. It's an Electron, Arc-style browser shipped as a self-updating
